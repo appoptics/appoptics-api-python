@@ -1,0 +1,199 @@
+# Copyright (c) 2013. AppOptics, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of AppOptics, Inc. nor the names of project contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL APPOPTICS, INC. BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+class Alert(object):
+    """AppOptics Alert Base class"""
+
+    def __init__(self, connection, name, _id=None, description=None, version=2, md=False,
+                 conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
+        self.connection = connection
+        self.name = name
+        self.description = description
+        self.version = version
+        self.conditions = []
+        for c in conditions:
+            if isinstance(c, Condition):
+                self.conditions.append(c)
+            elif isinstance(c, dict):
+                self.conditions.append(Condition.from_dict(c))
+            else:
+                self.conditions.append(Condition(*c))
+        self.services = []
+        for s in services:
+            if isinstance(s, Service):
+                self.services.append(s)
+            elif isinstance(s, dict):
+                self.services.append(Service.from_dict(connection, s))
+            elif isinstance(s, int):
+                self.services.append(Service(s))
+            else:
+                self.services.append(Service(*s))
+        self.attributes = attributes
+        self.active = active
+        self.rearm_seconds = rearm_seconds
+        self._id = _id
+        self.md = md
+
+    def add_condition_for(self, metric_name, source='*'):
+        condition = Condition(metric_name, source)
+        self.conditions.append(condition)
+        return condition
+
+    def add_service(self, service_id):
+        self.services.append(Service(service_id))
+
+    def __repr__(self):
+        return "%s<%s>" % (self.__class__.__name__, self.name)
+
+    @classmethod
+    def from_dict(cls, connection, data):
+        """Returns an alert object from a dictionary item,
+        which is usually from AppOptics's API"""
+        obj = cls(connection,
+                  data['name'],
+                  version=data['version'],
+                  description=data['description'],
+                  conditions=data['conditions'],
+                  services=data['services'],
+                  _id=data['id'],
+                  active=data['active'],
+                  rearm_seconds=data['rearm_seconds'],
+                  attributes=data['attributes'],
+                  md=data['md'])
+        return obj
+
+    def get_payload(self):
+        return {'name': self.name,
+                'md': self.md,
+                'attributes': self.attributes,
+                'version': self.version,
+                'description': self.description,
+                'rearm_seconds': self.rearm_seconds,
+                'active': self.active,
+                'services': [x._id for x in self.services],
+                'conditions': [x.get_payload() for x in self.conditions]}
+
+    def save(self):
+        self.connection.update_alert(self)
+
+
+class Condition(object):
+    ABOVE = 'above'
+    BELOW = 'below'
+    ABSENT = 'absent'
+
+    # Note this is 'average' not 'mean'
+    SUMMARY_FUNCTION_AVERAGE = 'average'
+
+    def __init__(self, metric_name, source='*', tags=None):
+        self.metric_name = metric_name
+        self.source = source
+        self.tags = tags or {}
+        self.summary_function = None
+
+    def above(self, threshold, summary_function=SUMMARY_FUNCTION_AVERAGE):
+        self.condition_type = self.ABOVE
+        self.summary_function = summary_function
+        self.threshold = threshold
+        # This implies an immediate trigger
+        self._duration = None
+        return self
+
+    def below(self, threshold, summary_function=SUMMARY_FUNCTION_AVERAGE):
+        self.condition_type = self.BELOW
+        self.summary_function = summary_function
+        self.threshold = threshold
+        # This implies an immediate trigger
+        self._duration = None
+        return self
+
+    # Stops reporting for a duration (in seconds)
+    def stops_reporting_for(self, duration):
+        self.condition_type = self.ABSENT
+        self.summary_function = None
+        self._duration = duration
+        return self
+
+    def duration(self, duration):
+        self._duration = duration
+
+    # An alert condition is either "immediate" or "time windowed"
+    def immediate(self):
+        if self._duration is None or self._duration == 0:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls(metric_name=data['metric_name'],
+                  source=data.get('source', '*'),
+                  tags=data.get('tags', {}))
+        if data['type'] == Condition.ABOVE:
+            obj.above(data.get('threshold'), data.get('summary_function'))
+            obj.duration(data.get('duration'))
+        elif data['type'] == Condition.BELOW:
+            obj.below(data.get('threshold'), data.get('summary_function'))
+            obj.duration(data.get('duration'))
+        elif data['type'] == Condition.ABSENT:
+            obj.stops_reporting_for(data.get('duration'))
+        return obj
+
+    def get_payload(self):
+        obj = {
+            'type': self.condition_type,
+            'metric_name': self.metric_name,
+            'source': self.source,
+            'tags': self.tags,
+            'summary_function': self.summary_function,
+            'duration': self._duration
+        }
+        if self.condition_type in [self.ABOVE, self.BELOW]:
+            obj['threshold'] = self.threshold
+        return obj
+
+
+class Service(object):
+    def __init__(self, _id, title=None, type=None, settings=None):
+        self._id = _id
+        self.title = title
+        self.type = type
+        self.settings = settings
+
+    @classmethod
+    def from_dict(cls, connection, data):
+        obj = cls(data['id'], data['title'], data['type'], data['settings'])
+        return obj
+
+    def get_payload(self):
+        return {
+            'id': self._id,
+            'title': self.title,
+            'type': self.type,
+            'settings': self.settings
+        }
+
+    def __repr__(self):
+        return "%s<%s><%s>" % (self.__class__.__name__, self.type, self.title)
