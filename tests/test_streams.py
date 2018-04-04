@@ -1,17 +1,17 @@
 import logging
 import unittest
-import appoptics
-from appoptics.streams import Stream
+import appoptics_metrics
+from appoptics_metrics.streams import Stream
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-appoptics.HTTPSConnection = MockConnect
+appoptics_metrics.HTTPSConnection = MockConnect
 
 
 class TestStreamModel(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
         server.clean()
 
     def test_init_metric(self):

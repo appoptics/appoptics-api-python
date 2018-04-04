@@ -1,16 +1,16 @@
 import logging
 import unittest
-import appoptics
+import appoptics_metrics
 import mock_connection
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-appoptics.HTTPSConnection = mock_connection.MockConnect
+appoptics_metrics.HTTPSConnection = mock_connection.MockConnect
 
 
 class TestRetries(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
         mock_connection.server.clean()
 
     def test_list_metrics_with_retries(self):

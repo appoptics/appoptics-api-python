@@ -1,15 +1,15 @@
 import logging
 import unittest
-import appoptics
+import appoptics_metrics_metrics
 from mock_connection import MockConnect, server
 
 # Mock the server
-appoptics.HTTPSConnection = MockConnect
+appoptics_metrics_metrics.HTTPSConnection = MockConnect
 
 
 class TestAppOpticsAlerts(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
         self.name = 'my_alert'
         server.clean()
 
@@ -19,7 +19,7 @@ class TestAppOpticsAlerts(unittest.TestCase):
 
     def test_create_alert_without_services_or_conditions(self):
         alert = self.conn.create_alert(self.name)
-        self.assertIsInstance(alert, appoptics.Alert)
+        self.assertIsInstance(alert, appoptics_metrics.Alert)
         self.assertEqual(alert.name, self.name)
         self.assertNotEqual(alert._id, 0)
         self.assertEqual(len(alert.services), 0)
@@ -47,8 +47,8 @@ class TestAppOpticsAlerts(unittest.TestCase):
         self.assertEqual(alert.conditions[0].threshold, 200)
 
     def test_create_alert_with_condition_obj(self):
-        c1 = appoptics.alerts.Condition('cpu', 'web*').above(42)
-        c2 = appoptics.alerts.Condition('mem').below(99)
+        c1 = appoptics_metrics.alerts.Condition('cpu', 'web*').above(42)
+        c2 = appoptics_metrics.alerts.Condition('mem').below(99)
         alert = self.conn.create_alert(self.name, conditions=[c1, c2])
         self.assertEqual(len(alert.conditions), 2)
         self.assertEqual(alert.conditions[0].metric_name, 'cpu')
@@ -81,7 +81,7 @@ class TestAppOpticsAlerts(unittest.TestCase):
         self.assertEqual(alert.services[0]._id, service_id)
 
     def test_create_alert_with_service_obj(self):
-        service = appoptics.alerts.Service(1234)
+        service = appoptics_metrics.alerts.Service(1234)
         alert = self.conn.create_alert(self.name, services=[service])
         self.assertEqual(len(alert.services), 1)
         self.assertEqual(len(alert.conditions), 0)
@@ -117,7 +117,7 @@ class TestAppOpticsAlerts(unittest.TestCase):
         assert condition._duration == 5
 
     def test_immediate_condition(self):
-        cond = appoptics.alerts.Condition('foo')
+        cond = appoptics_metrics.alerts.Condition('foo')
 
         cond._duration = None
         assert cond.immediate() is True
@@ -132,7 +132,7 @@ class TestAppOpticsAlerts(unittest.TestCase):
 
 class TestService(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
         self.sample_payload = {
             'title': 'Email Ops',
             'type': 'mail',
@@ -151,13 +151,13 @@ class TestService(unittest.TestCase):
         services = list(self.conn.list_services())
         self.assertEqual(len(services), 1)
         s = services[0]
-        self.assertIsInstance(s, appoptics.alerts.Service)
+        self.assertIsInstance(s, appoptics_metrics.alerts.Service)
         self.assertEqual(s.title, self.sample_payload['title'])
         self.assertEqual(s.type, self.sample_payload['type'])
         self.assertEqual(s.settings, self.sample_payload['settings'])
 
     def test_init_service(self):
-        s = appoptics.alerts.Service(123, title='the title', type='mail',
+        s = appoptics_metrics.alerts.Service(123, title='the title', type='mail',
                                    settings={'addresses': 'someone@example.com'})
         self.assertEqual(s._id, 123)
         self.assertEqual(s.title, 'the title')
@@ -167,7 +167,7 @@ class TestService(unittest.TestCase):
     def test_service_from_dict(self):
         payload = {'id': 123, 'title': 'the title', 'type': 'slack',
                    'settings': {'room': 'a room'}}
-        s = appoptics.alerts.Service.from_dict(self.conn, payload)
+        s = appoptics_metrics.alerts.Service.from_dict(self.conn, payload)
         self.assertEqual(s._id, 123)
         self.assertEqual(s.title, payload['title'])
         self.assertEqual(s.type, payload['type'])

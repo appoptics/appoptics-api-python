@@ -1,4 +1,4 @@
-from appoptics.streams import Stream
+from appoptics_metrics.streams import Stream
 
 
 class Space(object):

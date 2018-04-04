@@ -1,6 +1,6 @@
 import logging
 import unittest
-from appoptics import exceptions
+from appoptics_metrics import exceptions
 
 
 class TestClientError(unittest.TestCase):

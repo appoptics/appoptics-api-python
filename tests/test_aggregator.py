@@ -1,17 +1,17 @@
 import logging
 import unittest
-import appoptics
-from appoptics.aggregator import Aggregator
+import appoptics_metrics
+from appoptics_metrics.aggregator import Aggregator
 from mock_connection import MockConnect, server
 # from random import randint
 
 # logging.basicConfig(level=logging.DEBUG)
-appoptics.HTTPSConnection = MockConnect
+appoptics_metrics.HTTPSConnection = MockConnect
 
 
 class TestAggregator(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
         server.clean()
         self.agg = Aggregator(self.conn)
 

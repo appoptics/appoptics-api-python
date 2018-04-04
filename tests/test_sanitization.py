@@ -1,6 +1,6 @@
 # coding=utf-8
 import unittest
-from appoptics import sanitize_no_op, sanitize_metric_name
+from appoptics_metrics import sanitize_no_op, sanitize_metric_name
 
 
 class TestSanitization(unittest.TestCase):

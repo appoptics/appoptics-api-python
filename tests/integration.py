@@ -23,8 +23,8 @@ import logging
 from contextlib import contextmanager
 import nose
 import unittest
-from appoptics.exceptions import BadRequest
-import appoptics
+from appoptics_metrics.exceptions import BadRequest
+import appoptics_metrics
 import os
 from random import randint
 import time
@@ -49,8 +49,8 @@ class TestAppOpticsBase(unittest.TestCase):
             "to 'Y'" % user
 
         """Initialize the APPOPTICS Connection"""
-        cls.conn = appoptics.connect(user, token)
-        cls.conn_sanitize = appoptics.connect(user, token, sanitizer=appoptics.sanitize_metric_name)
+        cls.conn = appoptics_metrics.connect(user, token)
+        cls.conn_sanitize = appoptics_metrics.connect(user, token, sanitizer=appoptics_metrics.sanitize_metric_name)
 
     # Since these are live tests, I'm adding this to account for the slight
     # delay in RDS replication lag at the API (if needed).
@@ -347,25 +347,25 @@ class TestSpacesApi(TestAppOpticsBase):
         self.conn.delete_space(space.id)
 
     def test_create_space_via_model(self):
-        space = appoptics.Space(self.conn, 'Production')
+        space = appoptics_metrics.Space(self.conn, 'Production')
         self.assertIsNone(space.id)
         space.save()
         self.assertIsNotNone(space.id)
 
     def test_delete_space_via_model(self):
-        space = appoptics.Space(self.conn, 'delete me')
+        space = appoptics_metrics.Space(self.conn, 'delete me')
         space.save()
         self.wait_for_replication()
         space.delete()
         self.wait_for_replication()
-        self.assertRaises(appoptics.exceptions.NotFound, self.conn.get_space, space.id)
+        self.assertRaises(appoptics_metrics.exceptions.NotFound, self.conn.get_space, space.id)
 
     def test_create_chart(self):
         # Ensure metrics exist
         self.conn.submit('memory.free', 100)
         self.conn.submit('memory.used', 200)
         # Create space
-        space = appoptics.Space(self.conn, 'my space')
+        space = appoptics_metrics.Space(self.conn, 'my space')
         space.save()
         # Add chart
         chart = space.add_chart(
@@ -389,7 +389,7 @@ class TestSpacesApi(TestAppOpticsBase):
         # Ensure metrics exist
         self.conn.submit('memory.free', 100)
         # Create space
-        space = appoptics.Space(self.conn, 'my space')
+        space = appoptics_metrics.Space(self.conn, 'my space')
         space.save()
         self.wait_for_replication()
         chart = space.add_chart(

@@ -34,12 +34,12 @@ import urllib
 import base64
 import json
 import email.message
-from appoptics import exceptions
-from appoptics.queue import Queue
-from appoptics.metrics import Gauge, Counter, Metric
-from appoptics.alerts import Alert, Service
-from appoptics.annotations import Annotation
-from appoptics.spaces import Space, Chart
+from appoptics_metrics import exceptions
+from appoptics_metrics.queue import Queue
+from appoptics_metrics.metrics import Gauge, Counter, Metric
+from appoptics_metrics.alerts import Alert, Service
+from appoptics_metrics.annotations import Annotation
+from appoptics_metrics.spaces import Space, Chart
 
 __version__ = "3.1.1"
 

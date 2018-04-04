@@ -4,17 +4,17 @@ try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
-import appoptics
+import appoptics_metrics
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-appoptics.HTTPSConnection = MockConnect
+appoptics_metrics.HTTPSConnection = MockConnect
 
 
 class TestConnection(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        self.conn = appoptics_metrics.connect('user_test', 'key_test', tags={'sky': 'blue'})
         server.clean()
 
     def test_constructor_tags(self):

@@ -4,13 +4,13 @@ try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
-import appoptics
+import appoptics_metrics
 import time
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-appoptics.HTTPSConnection = MockConnect
+appoptics_metrics.HTTPSConnection = MockConnect
 
 fake_metric = {
     "name": "3333",
@@ -27,7 +27,7 @@ fake_metric = {
 
 class TestAppOptics(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
         server.clean()
 
     def test_list_metrics_when_there_are_no_metrics(self):
@@ -70,11 +70,11 @@ class TestAppOptics(unittest.TestCase):
         metrics = self.conn.list_metrics()
 
         assert len(metrics) == 2
-        assert isinstance(metrics[0], appoptics.metrics.Gauge)
+        assert isinstance(metrics[0], appoptics_metrics.metrics.Gauge)
         assert metrics[0].name == 'gauge_1'
         assert metrics[0].description == 'desc 1'
 
-        assert isinstance(metrics[1], appoptics.metrics.Gauge)
+        assert isinstance(metrics[1], appoptics_metrics.metrics.Gauge)
         assert metrics[1].name == 'gauge_2'
         assert metrics[1].description == 'desc 2'
 
@@ -86,11 +86,11 @@ class TestAppOptics(unittest.TestCase):
 
         assert len(metrics) == 2
 
-        assert isinstance(metrics[0], appoptics.metrics.Counter)
+        assert isinstance(metrics[0], appoptics_metrics.metrics.Counter)
         assert metrics[0].name == 'c1'
         assert metrics[0].description == 'counter desc 1'
 
-        assert isinstance(metrics[1], appoptics.metrics.Counter)
+        assert isinstance(metrics[1], appoptics_metrics.metrics.Counter)
         assert metrics[1].name == 'c2'
         assert metrics[1].description == 'counter desc 2'
 
@@ -99,10 +99,10 @@ class TestAppOptics(unittest.TestCase):
         self.conn.submit('counter2', 20, type='counter', description="desc c2")
         # Get all metrics
         metrics = self.conn.list_metrics()
-        assert isinstance(metrics[0], appoptics.metrics.Gauge)
+        assert isinstance(metrics[0], appoptics_metrics.metrics.Gauge)
         assert metrics[0].name == 'gauge1'
 
-        assert isinstance(metrics[1], appoptics.metrics.Counter)
+        assert isinstance(metrics[1], appoptics_metrics.metrics.Counter)
         assert metrics[1].name == 'counter2'
         assert metrics[1].description == 'desc c2'
 
@@ -129,7 +129,7 @@ class TestAppOptics(unittest.TestCase):
         name, desc = '1', 'desc 1'
         self.conn.submit(name, 10, description=desc)
         gauge = self.conn.get(name)
-        assert isinstance(gauge, appoptics.metrics.Gauge)
+        assert isinstance(gauge, appoptics_metrics.metrics.Gauge)
         assert gauge.name == name
         assert gauge.description == desc
         assert len(gauge.measurements['unassigned']) == 1
@@ -139,7 +139,7 @@ class TestAppOptics(unittest.TestCase):
         name, desc = 'counter1', 'count desc 1'
         self.conn.submit(name, 20, type='counter', description=desc)
         counter = self.conn.get(name)
-        assert isinstance(counter, appoptics.metrics.Counter)
+        assert isinstance(counter, appoptics_metrics.metrics.Counter)
         assert counter.name == name
         assert counter.description == desc
         assert len(counter.measurements['unassigned']) == 1

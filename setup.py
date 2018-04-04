@@ -9,17 +9,17 @@ if sys.argv[-1] == 'publish':
     sys.exit()
 
 setup(
-    name="appoptics",
+    name="appoptics_metrics",
     version="3.1.1",        # Update also in __init__ ; look into zest.releaser to avoid having two versions
-    description="Python API Wrapper for AppOptics",
+    description="Python API Wrapper for AppOptics Metrics",
     long_description="Python Wrapper for the AppOptics Metrics API: https://docs.appoptics.com/kb/custom_metrics/api",
     author="AppOptics",
     author_email="support@appoptics.com",
     url='https://github.com/librato/python-appoptics-metrics',
     license='https://github.com/librato/python-appoptics-metrics/blob/master/LICENSE',
-    packages=['appoptics'],
+    packages=['appoptics_metrics'],
     package_data={'': ['LICENSE', 'README.md', 'CHANGELOG.md']},
-    package_dir={'appoptics': 'appoptics'},
+    package_dir={'appoptics_metrics': 'appoptics_metrics'},
     include_package_data=True,
     platforms='Posix; MacOS X; Windows',
     classifiers=[

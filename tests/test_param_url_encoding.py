@@ -1,12 +1,12 @@
 import logging
 import unittest
-import appoptics
+import appoptics_metrics
 
 
 class TestAppOpticsUrlEncoding(unittest.TestCase):
 
     def setUp(self):
-        self.conn = appoptics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('user_test', 'key_test')
 
     def test_string_encoding(self):
         params = {"name": "abcd"}
