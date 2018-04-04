@@ -16,7 +16,7 @@ integration:
 	python tests/integration.py
 
 coverage:
-	nosetests --cover-package=librato --cover-erase --cover-html --with-coverage
+	nosetests --cover-package=appoptics_metrics --cover-erase --cover-html --with-coverage
 	@echo ">> open "file:///"`pwd`/cover/index.html"
 
 tox:
@@ -27,4 +27,4 @@ publish:
 
 clean:
 	find . -name "*.pyc" | xargs rm -f
-	rm -rf tests/__pycache__ librato_metrics.egg-info htmlcov .coverage dist cover
+	rm -rf tests/__pycache__ appoptics_metrics.egg-info htmlcov .coverage dist cover
