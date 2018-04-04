@@ -4,13 +4,13 @@ try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
-import librato
+import appoptics
 import time
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 fake_metric = {
     "name": "3333",
@@ -25,9 +25,9 @@ fake_metric = {
 }
 
 
-class TestLibrato(unittest.TestCase):
+class TestAppOptics(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         server.clean()
 
     def test_list_metrics_when_there_are_no_metrics(self):
@@ -70,11 +70,11 @@ class TestLibrato(unittest.TestCase):
         metrics = self.conn.list_metrics()
 
         assert len(metrics) == 2
-        assert isinstance(metrics[0], librato.metrics.Gauge)
+        assert isinstance(metrics[0], appoptics.metrics.Gauge)
         assert metrics[0].name == 'gauge_1'
         assert metrics[0].description == 'desc 1'
 
-        assert isinstance(metrics[1], librato.metrics.Gauge)
+        assert isinstance(metrics[1], appoptics.metrics.Gauge)
         assert metrics[1].name == 'gauge_2'
         assert metrics[1].description == 'desc 2'
 
@@ -86,11 +86,11 @@ class TestLibrato(unittest.TestCase):
 
         assert len(metrics) == 2
 
-        assert isinstance(metrics[0], librato.metrics.Counter)
+        assert isinstance(metrics[0], appoptics.metrics.Counter)
         assert metrics[0].name == 'c1'
         assert metrics[0].description == 'counter desc 1'
 
-        assert isinstance(metrics[1], librato.metrics.Counter)
+        assert isinstance(metrics[1], appoptics.metrics.Counter)
         assert metrics[1].name == 'c2'
         assert metrics[1].description == 'counter desc 2'
 
@@ -99,10 +99,10 @@ class TestLibrato(unittest.TestCase):
         self.conn.submit('counter2', 20, type='counter', description="desc c2")
         # Get all metrics
         metrics = self.conn.list_metrics()
-        assert isinstance(metrics[0], librato.metrics.Gauge)
+        assert isinstance(metrics[0], appoptics.metrics.Gauge)
         assert metrics[0].name == 'gauge1'
 
-        assert isinstance(metrics[1], librato.metrics.Counter)
+        assert isinstance(metrics[1], appoptics.metrics.Counter)
         assert metrics[1].name == 'counter2'
         assert metrics[1].description == 'desc c2'
 
@@ -129,7 +129,7 @@ class TestLibrato(unittest.TestCase):
         name, desc = '1', 'desc 1'
         self.conn.submit(name, 10, description=desc)
         gauge = self.conn.get(name)
-        assert isinstance(gauge, librato.metrics.Gauge)
+        assert isinstance(gauge, appoptics.metrics.Gauge)
         assert gauge.name == name
         assert gauge.description == desc
         assert len(gauge.measurements['unassigned']) == 1
@@ -139,7 +139,7 @@ class TestLibrato(unittest.TestCase):
         name, desc = 'counter1', 'count desc 1'
         self.conn.submit(name, 20, type='counter', description=desc)
         counter = self.conn.get(name)
-        assert isinstance(counter, librato.metrics.Counter)
+        assert isinstance(counter, appoptics.metrics.Counter)
         assert counter.name == name
         assert counter.description == desc
         assert len(counter.measurements['unassigned']) == 1
@@ -198,14 +198,14 @@ class TestLibrato(unittest.TestCase):
         assert gauge.measurements[src][-1]['value'] == 1
 
     def test_md_inherit_tags(self):
-        self.conn.set_tags({'company': 'Librato', 'hi': 'four'})
+        self.conn.set_tags({'company': 'AppOptics', 'hi': 'four'})
 
         measurement = self.conn.create_tagged_payload('user_cpu', 20.2, tags={'hi': 'five'}, inherit_tags=True)
 
-        assert measurement['tags'] == {'hi': 'five', 'company': 'Librato'}
+        assert measurement['tags'] == {'hi': 'five', 'company': 'AppOptics'}
 
     def test_md_donot_inherit_tags(self):
-        self.conn.set_tags({'company': 'Librato', 'hi': 'four'})
+        self.conn.set_tags({'company': 'AppOptics', 'hi': 'four'})
 
         measurement = self.conn.create_tagged_payload('user_cpu', 20.2, tags={'hi': 'five'})
 
@@ -235,12 +235,12 @@ class TestLibrato(unittest.TestCase):
     def test_merge_tags(self):
         mt1 = int(time.time()) - 5
 
-        self.conn.set_tags({'company': 'Librato'})
+        self.conn.set_tags({'company': 'AppOptics'})
         tags = {'hostname': 'web-1'}
         self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags, inherit_tags=True)
 
         # Ensure 'company' and 'hostname' tags made it through
-        for tags_search in ["hostname=web-1", "company=Librato"]:
+        for tags_search in ["hostname=web-1", "company=AppOptics"]:
             resp = self.conn.get_tagged('user_cpu', duration=60, tags_search=tags_search)
 
             assert len(resp['series']) == 1

@@ -1,17 +1,17 @@
 import logging
 import unittest
-import librato
-from librato.streams import Stream
+import appoptics
+from appoptics.streams import Stream
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 
 class TestStreamModel(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         server.clean()
 
     def test_init_metric(self):

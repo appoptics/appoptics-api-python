@@ -1,12 +1,12 @@
 import logging
 import unittest
-import librato
+import appoptics
 
 
-class TestLibratoUrlEncoding(unittest.TestCase):
+class TestAppOpticsUrlEncoding(unittest.TestCase):
 
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
 
     def test_string_encoding(self):
         params = {"name": "abcd"}

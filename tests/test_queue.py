@@ -1,18 +1,18 @@
 import logging
 import unittest
-import librato
-from librato.aggregator import Aggregator
+import appoptics
+from appoptics.aggregator import Aggregator
 from mock_connection import MockConnect, server
 from random import randint
 import time
 
 # logging.basicConfig(level=logging.DEBUG)
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 
-class TestLibratoQueue(unittest.TestCase):
+class TestAppOpticsQueue(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         server.clean()
         self.q = self.conn.new_queue()
 
@@ -26,7 +26,7 @@ class TestLibratoQueue(unittest.TestCase):
         assert len(q.get_tags()) == 0
 
     def test_inherited_tags(self):
-        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue'})
         assert conn.get_tags() == {'sky': 'blue'}
 
         q = conn.new_queue()
@@ -45,7 +45,7 @@ class TestLibratoQueue(unittest.TestCase):
 
     def test_inherit_connection_level_tags(self):
         """test if top level tags are ignored when passing measurement level tags"""
-        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue'})
 
         q = conn.new_queue()
         q.add_tagged('user_cpu', 10, tags={"hi": "five"}, inherit_tags=True)
@@ -57,7 +57,7 @@ class TestLibratoQueue(unittest.TestCase):
 
     def test_ignore_connection_queue_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
-        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue'})
 
         q = conn.new_queue(tags={"service": "api"})
         q.add_tagged('user_cpu', 10, tags={"hi": "five"})
@@ -73,29 +73,29 @@ class TestLibratoQueue(unittest.TestCase):
 
     def test_inherit_connection_level_tags_through_add(self):
         """test if connection level tags are recognized when using the add function"""
-        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'Librato'})
+        conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'AppOptics'})
 
         q = conn.new_queue()
         q.add('user_cpu', 100)
         measurements = q.tagged_chunks[0]['measurements']
 
         assert len(measurements) == 1
-        assert measurements[0].get('tags', {}) == {'sky': 'blue', 'company': 'Librato'}
+        assert measurements[0].get('tags', {}) == {'sky': 'blue', 'company': 'AppOptics'}
 
     def test_inherit_queue_connection_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
-        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'Librato'})
+        conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'AppOptics'})
 
         q = conn.new_queue(tags={"service": "api", "hi": "four", "sky": "red"})
         q.add_tagged('user_cpu', 100, tags={"hi": "five"}, inherit_tags=True)
         measurements = q.tagged_chunks[0]['measurements']
 
         assert len(measurements) == 1
-        assert measurements[0].get('tags', {}) == {'sky': 'red', 'service': 'api', 'hi': 'five', 'company': 'Librato'}
+        assert measurements[0].get('tags', {}) == {'sky': 'red', 'service': 'api', 'hi': 'five', 'company': 'AppOptics'}
 
     def test_inherit_queue_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
-        conn = librato.connect('user_test', 'key_test')
+        conn = appoptics.connect('user_test', 'key_test')
 
         q = conn.new_queue(tags={"service": "api", "hi": "four"})
         q.add_tagged('user_cpu', 100, tags={"hi": "five"}, inherit_tags=True)
@@ -105,7 +105,7 @@ class TestLibratoQueue(unittest.TestCase):
         assert measurements[0].get('tags', {}) == {'service': 'api', 'hi': 'five'}
 
     def test_constructor_tags(self):
-        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        conn = appoptics.connect('user_test', 'key_test', tags={'sky': 'blue'})
         q = conn.new_queue(tags={'sky': 'red', 'coal': 'black'})
         tags = q.get_tags()
 

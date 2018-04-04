@@ -1,18 +1,18 @@
 import logging
 import unittest
-import librato
-from librato import Space, Chart
-from librato.streams import Stream
+import appoptics
+from appoptics import Space, Chart
+from appoptics.streams import Stream
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 
 class ChartsTest(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         server.clean()
 
 

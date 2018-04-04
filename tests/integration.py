@@ -23,34 +23,34 @@ import logging
 from contextlib import contextmanager
 import nose
 import unittest
-from librato.exceptions import BadRequest
-import librato
+from appoptics.exceptions import BadRequest
+import appoptics
 import os
 from random import randint
 import time
 logging.basicConfig(level=logging.INFO)
 
 
-class TestLibratoBase(unittest.TestCase):
+class TestAppOpticsBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """ Auth """
-        user = os.environ.get('LIBRATO_USER')
-        token = os.environ.get('LIBRATO_TOKEN')
-        assert user and token, "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
+        user = os.environ.get('APPOPTICS_USER')
+        token = os.environ.get('APPOPTICS_TOKEN')
+        assert user and token, "Must set APPOPTICS_USER and APPOPTICS_TOKEN to run tests"
         print "%s and %s" % (user, token)
 
         """ Ensure user really wants to run these tests """
-        are_you_sure = os.environ.get('LIBRATO_ALLOW_INTEGRATION_TESTS')
+        are_you_sure = os.environ.get('APPOPTICS_ALLOW_INTEGRATION_TESTS')
         assert are_you_sure == 'Y', "INTEGRATION TESTS WILL DELETE METRICS " \
             "IN YOUR ACCOUNT!!! " \
             "If you are absolutely sure that you want to run tests "\
-            "against %s, please set LIBRATO_ALLOW_INTEGRATION_TESTS "\
+            "against %s, please set APPOPTICS_ALLOW_INTEGRATION_TESTS "\
             "to 'Y'" % user
 
-        """Initialize the Librato Connection"""
-        cls.conn = librato.connect(user, token)
-        cls.conn_sanitize = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
+        """Initialize the APPOPTICS Connection"""
+        cls.conn = appoptics.connect(user, token)
+        cls.conn_sanitize = appoptics.connect(user, token, sanitizer=appoptics.sanitize_metric_name)
 
     # Since these are live tests, I'm adding this to account for the slight
     # delay in RDS replication lag at the API (if needed).
@@ -59,7 +59,7 @@ class TestLibratoBase(unittest.TestCase):
         time.sleep(1)
 
 
-class TestLibratoBasic(TestLibratoBase):
+class TestAppOpticsBasic(TestAppOpticsBase):
 
     def test_list_metrics(self):
         metrics = self.conn.list_metrics()
@@ -198,7 +198,7 @@ class TestLibratoBasic(TestLibratoBase):
         self.conn_sanitize.delete(name)
 
 
-class TestLibratoAlertsIntegration(TestLibratoBase):
+class TestAppOpticsAlertsIntegration(TestAppOpticsBase):
 
     alerts_created_during_test = []
     gauges_used_during_test = ['metric_test', 'cpu']
@@ -310,7 +310,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         return name
 
 
-class TestSpacesApi(TestLibratoBase):
+class TestSpacesApi(TestAppOpticsBase):
     @classmethod
     def setUpClass(cls):
         super(TestSpacesApi, cls).setUpClass()
@@ -347,25 +347,25 @@ class TestSpacesApi(TestLibratoBase):
         self.conn.delete_space(space.id)
 
     def test_create_space_via_model(self):
-        space = librato.Space(self.conn, 'Production')
+        space = appoptics.Space(self.conn, 'Production')
         self.assertIsNone(space.id)
         space.save()
         self.assertIsNotNone(space.id)
 
     def test_delete_space_via_model(self):
-        space = librato.Space(self.conn, 'delete me')
+        space = appoptics.Space(self.conn, 'delete me')
         space.save()
         self.wait_for_replication()
         space.delete()
         self.wait_for_replication()
-        self.assertRaises(librato.exceptions.NotFound, self.conn.get_space, space.id)
+        self.assertRaises(appoptics.exceptions.NotFound, self.conn.get_space, space.id)
 
     def test_create_chart(self):
         # Ensure metrics exist
         self.conn.submit('memory.free', 100)
         self.conn.submit('memory.used', 200)
         # Create space
-        space = librato.Space(self.conn, 'my space')
+        space = appoptics.Space(self.conn, 'my space')
         space.save()
         # Add chart
         chart = space.add_chart(
@@ -389,7 +389,7 @@ class TestSpacesApi(TestLibratoBase):
         # Ensure metrics exist
         self.conn.submit('memory.free', 100)
         # Create space
-        space = librato.Space(self.conn, 'my space')
+        space = appoptics.Space(self.conn, 'my space')
         space.save()
         self.wait_for_replication()
         chart = space.add_chart(
@@ -417,5 +417,5 @@ class TestSpacesApi(TestLibratoBase):
 
 if __name__ == '__main__':
     # TO run a specific test:
-    # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
+    # $ nosetests tests/integration.py:TestAppOpticsoBasic.test_update_metrics_attributes
     nose.runmodule()

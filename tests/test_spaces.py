@@ -1,18 +1,18 @@
 import logging
 import unittest
-import librato
-from librato import Space, Chart
-from librato.streams import Stream
+import appoptics
+from appoptics import Space, Chart
+from appoptics.streams import Stream
 from mock_connection import MockConnect, server
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 
 class SpacesTest(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         server.clean()
 
 
@@ -224,7 +224,7 @@ class TestSpaceModel(SpacesTest):
         space = self.conn.create_space('foo')
         chart = space.add_chart('baz', type='bignumber')
         self.assertEqual(chart.type, 'bignumber')
-        # Leave this up to the Librato API to default
+        # Leave this up to the AppOptics API to default
         self.assertIsNone(chart.use_last_value)
 
     def test_add_chart_bignumber_use_last_value(self):

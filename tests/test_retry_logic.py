@@ -1,16 +1,16 @@
 import logging
 import unittest
-import librato
+import appoptics
 import mock_connection
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
-librato.HTTPSConnection = mock_connection.MockConnect
+appoptics.HTTPSConnection = mock_connection.MockConnect
 
 
 class TestRetries(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         mock_connection.server.clean()
 
     def test_list_metrics_with_retries(self):

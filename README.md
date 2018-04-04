@@ -194,7 +194,7 @@ api.submit('temperature', 80, tags={'city': 'sf'}, inherit_tags=True)
 
 q = api.new_queue(tags={'service':'api'})
 
-# tags will be {'location': 'downstairs'} 
+# tags will be {'location': 'downstairs'}
 q.add('temperature', 22.1, tags={'location': 'downstairs'})
 
 # tags will be {'company': 'librato', 'service':'api'}

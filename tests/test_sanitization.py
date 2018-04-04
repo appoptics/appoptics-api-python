@@ -1,6 +1,6 @@
 # coding=utf-8
 import unittest
-from librato import sanitize_no_op, sanitize_metric_name
+from appoptics import sanitize_no_op, sanitize_metric_name
 
 
 class TestSanitization(unittest.TestCase):

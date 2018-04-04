@@ -1,6 +1,6 @@
 import logging
 import unittest
-from librato import exceptions
+from appoptics import exceptions
 
 
 class TestClientError(unittest.TestCase):

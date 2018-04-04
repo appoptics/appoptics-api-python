@@ -1,15 +1,15 @@
 import logging
 import unittest
-import librato
+import appoptics
 from mock_connection import MockConnect, server
 
 # Mock the server
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 
-class TestLibratoAlerts(unittest.TestCase):
+class TestAppOpticsAlerts(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         self.name = 'my_alert'
         server.clean()
 
@@ -19,7 +19,7 @@ class TestLibratoAlerts(unittest.TestCase):
 
     def test_create_alert_without_services_or_conditions(self):
         alert = self.conn.create_alert(self.name)
-        self.assertIsInstance(alert, librato.Alert)
+        self.assertIsInstance(alert, appoptics.Alert)
         self.assertEqual(alert.name, self.name)
         self.assertNotEqual(alert._id, 0)
         self.assertEqual(len(alert.services), 0)
@@ -47,8 +47,8 @@ class TestLibratoAlerts(unittest.TestCase):
         self.assertEqual(alert.conditions[0].threshold, 200)
 
     def test_create_alert_with_condition_obj(self):
-        c1 = librato.alerts.Condition('cpu', 'web*').above(42)
-        c2 = librato.alerts.Condition('mem').below(99)
+        c1 = appoptics.alerts.Condition('cpu', 'web*').above(42)
+        c2 = appoptics.alerts.Condition('mem').below(99)
         alert = self.conn.create_alert(self.name, conditions=[c1, c2])
         self.assertEqual(len(alert.conditions), 2)
         self.assertEqual(alert.conditions[0].metric_name, 'cpu')
@@ -81,7 +81,7 @@ class TestLibratoAlerts(unittest.TestCase):
         self.assertEqual(alert.services[0]._id, service_id)
 
     def test_create_alert_with_service_obj(self):
-        service = librato.alerts.Service(1234)
+        service = appoptics.alerts.Service(1234)
         alert = self.conn.create_alert(self.name, services=[service])
         self.assertEqual(len(alert.services), 1)
         self.assertEqual(len(alert.conditions), 0)
@@ -117,7 +117,7 @@ class TestLibratoAlerts(unittest.TestCase):
         assert condition._duration == 5
 
     def test_immediate_condition(self):
-        cond = librato.alerts.Condition('foo')
+        cond = appoptics.alerts.Condition('foo')
 
         cond._duration = None
         assert cond.immediate() is True
@@ -132,7 +132,7 @@ class TestLibratoAlerts(unittest.TestCase):
 
 class TestService(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         self.sample_payload = {
             'title': 'Email Ops',
             'type': 'mail',
@@ -151,13 +151,13 @@ class TestService(unittest.TestCase):
         services = list(self.conn.list_services())
         self.assertEqual(len(services), 1)
         s = services[0]
-        self.assertIsInstance(s, librato.alerts.Service)
+        self.assertIsInstance(s, appoptics.alerts.Service)
         self.assertEqual(s.title, self.sample_payload['title'])
         self.assertEqual(s.type, self.sample_payload['type'])
         self.assertEqual(s.settings, self.sample_payload['settings'])
 
     def test_init_service(self):
-        s = librato.alerts.Service(123, title='the title', type='mail',
+        s = appoptics.alerts.Service(123, title='the title', type='mail',
                                    settings={'addresses': 'someone@example.com'})
         self.assertEqual(s._id, 123)
         self.assertEqual(s.title, 'the title')
@@ -167,7 +167,7 @@ class TestService(unittest.TestCase):
     def test_service_from_dict(self):
         payload = {'id': 123, 'title': 'the title', 'type': 'slack',
                    'settings': {'room': 'a room'}}
-        s = librato.alerts.Service.from_dict(self.conn, payload)
+        s = appoptics.alerts.Service.from_dict(self.conn, payload)
         self.assertEqual(s._id, 123)
         self.assertEqual(s.title, payload['title'])
         self.assertEqual(s.type, payload['type'])

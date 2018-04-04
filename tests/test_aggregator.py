@@ -1,17 +1,17 @@
 import logging
 import unittest
-import librato
-from librato.aggregator import Aggregator
+import appoptics
+from appoptics.aggregator import Aggregator
 from mock_connection import MockConnect, server
 # from random import randint
 
 # logging.basicConfig(level=logging.DEBUG)
-librato.HTTPSConnection = MockConnect
+appoptics.HTTPSConnection = MockConnect
 
 
 class TestAggregator(unittest.TestCase):
     def setUp(self):
-        self.conn = librato.connect('user_test', 'key_test')
+        self.conn = appoptics.connect('user_test', 'key_test')
         server.clean()
         self.agg = Aggregator(self.conn)
 
