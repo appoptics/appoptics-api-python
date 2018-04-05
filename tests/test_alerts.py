@@ -1,10 +1,10 @@
 import logging
 import unittest
-import appoptics_metrics_metrics
+import appoptics_metrics
 from mock_connection import MockConnect, server
 
 # Mock the server
-appoptics_metrics_metrics.HTTPSConnection = MockConnect
+appoptics_metrics.HTTPSConnection = MockConnect
 
 
 class TestAppOpticsAlerts(unittest.TestCase):
