@@ -1,5 +1,9 @@
 ## Changelog
 
+### Version 3.1.1
+* Introduce your message here.
+New AppOptics version.
+
 ### Version 3.1.0
 Added the ability to inherit tags
 Readme updates for tag usage

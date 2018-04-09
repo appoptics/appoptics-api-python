@@ -430,6 +430,11 @@ Want to contribute? Need a new feature? Please open an
 The original version of `python-librato` was conceived/authored/released by Chris Moyer (AKA [@kopertop](https://github.com/kopertop)). He's
 graciously handed over maintainership of the project to us and we're super-appreciative of his efforts.
 
+
+## Build / publish
+python3 setup.py bdist_wheel
+twine upload dist/*
+
 ## Copyright
 
 Copyright (c) 2011-2017 [Librato Inc.](http://librato.com) See LICENSE for details.
