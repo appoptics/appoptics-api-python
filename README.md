@@ -1,30 +1,28 @@
-python-librato
+python-appoptics-metrics
 ==============
 
-[![Build Status](https://secure.travis-ci.org/librato/python-librato.png?branch=master)](http://travis-ci.org/librato/python-librato)
 
-A Python wrapper for the Librato Metrics API.
+A Python wrapper for the AppOptics Metrics API.
 
 ## Documentation Notes
 
 - New accounts
-  - Refer to [master](https://github.com/librato/python-librato/tree/master) for the latest documentation.
-- Legacy (source-based) Librato users
-  - Please see the [legacy documentation](https://github.com/librato/python-librato/tree/v2.1.2)
+  - Refer to [master](https://github.com/librato/python-appoptics-metrics/tree/master) for the latest documentation.
+
 
 ## Installation
 
 In your shell:
 
-  ```$ easy_install librato-metrics```
+  ```$ easy_install appoptics-metrics```
 
   or
 
-  ```$ pip install librato-metrics```
+  ```$ pip install appoptics-metrics```
 
 From your application or script:
 
-  ```import librato```
+  ```import appoptics_metrics```
 
 ## Authentication
 
