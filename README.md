@@ -32,7 +32,7 @@ Assuming you have
 username (email address) and token (long hexadecimal string).
 
 ```python
-  api = librato.connect('email', 'token')
+  api = appoptics_metrics.connect('email', 'token')
 ```
 
 ### Metric name sanitization
@@ -43,7 +43,7 @@ sanitization function that will ensure your metrics are legal librato names.
 This can be set as such:
 
 ```python
-  api = librato.connect('email', 'token', sanitizer=librato.sanitize_metric_name)
+  api = appoptics_metrics.connect('email', 'token', sanitizer=librato.sanitize_metric_name)
 ```
 
 By default no sanitization is done.
@@ -182,7 +182,7 @@ When there are tag collisions, the measurement, then the batch, then the connect
 priority.
 
 ```python
-api = librato.connect('email', 'token', tags={'company': 'librato', 'service': 'app'})
+api = appoptics_metrics.connect('email', 'token', tags={'company': 'librato', 'service': 'app'})
 
 # tags will be {'city': 'sf'}
 api.submit('temperature', 80, tags={'city': 'sf'})
@@ -304,11 +304,11 @@ linechart = api.create_chart(
   space,
   streams=[
     {
-      "metric": "librato.cpu.percent.idle",
+      "metric": "appoptics.cpu.percent.idle",
       "tags": [{"name": "environment", "values": ["*"]]
     },
     {
-      "metric": "librato.cpu.percent.user",
+      "metric": "appoptics.cpu.percent.user",
       "tags": [{"name": "environment", 'dynamic': True}]
     }
   ]
@@ -437,4 +437,4 @@ twine upload dist/*
 
 ## Copyright
 
-Copyright (c) 2011-2017 [Librato Inc.](http://librato.com) See LICENSE for details.
+Copyright (c) 2011-2017 [appoptics Inc.](http://librato.com) See LICENSE for details.
