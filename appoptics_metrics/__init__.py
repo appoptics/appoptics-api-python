@@ -41,7 +41,7 @@ from appoptics_metrics.alerts import Alert, Service
 from appoptics_metrics.annotations import Annotation
 from appoptics_metrics.spaces import Space, Chart
 
-__version__ = "3.1.1"
+__version__ = "4.0.0"
 
 # Defaults
 HOSTNAME = "api.appoptics.com"
@@ -77,23 +77,20 @@ def sanitize_no_op(metric_name):
 class AppOpticsConnection(object):
     """AppOptics API Connection.
     Usage:
-    >>> conn = AppOpticsConnection(username, api_key)
+    >>> conn = AppOpticsConnection(api_key)
     >>> conn.list_metrics()
     [...]
     """
 
-    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
+    def __init__(self, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
                  protocol="https", tags={}):
         """Create a new connection to AppOptics Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
-        :param username: The username (email address) of the user to connect as
-        :type username: str
         :param api_key: The API Key (token) to use to authenticate
         :type api_key: str
         """
         try:
-            self.username = username.encode('ascii')
             self.api_key = api_key.encode('ascii')
         except:
             raise TypeError("AppOptics only supports ascii for the credentials")
@@ -120,7 +117,7 @@ class AppOpticsConnection(object):
             # http://en.wikipedia.org/wiki/User_agent#Format
             # AppOptics-metrics/1.0.3 (ruby; 1.9.3p385; x86_64-darwin11.4.2) direct-faraday/0.8.4
             ua_chunks = []  # Set user agent
-            ua_chunks.append("python-appoptics-metrics/" + __version__)
+            ua_chunks.append("appoptics_metrics/" + __version__)
             p = platform
             system_info = (p.python_version(), p.machine(), p.system(), p.release())
             ua_chunks.append("(python; %s; %s-%s%s)" % system_info)
@@ -130,7 +127,7 @@ class AppOpticsConnection(object):
         def handle_undefined_method(*args):
             if re.search('dashboard|instrument', attr):
                 print("We have deprecated support for instruments and dashboards.")
-                print("https://github.com/librato/python-appoptics-metrics")
+                print("https://github.com/appoptics/appoptics-api-python")
                 print("")
             raise NotImplementedError()
         return handle_undefined_method
@@ -139,7 +136,7 @@ class AppOpticsConnection(object):
         """ set headers for request """
         if headers is None:
             headers = {}
-        headers['Authorization'] = b"Basic " + base64.b64encode(self.username + b":" + self.api_key).strip()
+        headers['Authorization'] = b"Basic " + base64.b64encode(self.api_key + b":").strip()
         headers['User-Agent'] = self._compute_ua()
         return headers
 
@@ -577,16 +574,14 @@ class AppOpticsConnection(object):
         self.timeout = timeout
 
 
-def connect(username=None, api_key=None, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
+def connect(api_key=None, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
             protocol="https", tags={}):
     """
     Connect to AppOptics Metrics
     """
-
-    username = username if username else os.getenv('APPOPTICS_USER', '')
     api_key = api_key if api_key else os.getenv('APPOPTICS_TOKEN', '')
 
-    return AppOpticsConnection(username, api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol, tags=tags)
+    return AppOpticsConnection(api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol, tags=tags)
 
 
 def _decode_body(resp):

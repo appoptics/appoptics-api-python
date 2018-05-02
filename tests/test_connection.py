@@ -14,7 +14,7 @@ appoptics_metrics.HTTPSConnection = MockConnect
 
 class TestConnection(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        self.conn = appoptics_metrics.connect('key_test', tags={'sky': 'blue'})
         server.clean()
 
     def test_constructor_tags(self):

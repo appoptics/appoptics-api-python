@@ -9,7 +9,7 @@ appoptics_metrics.HTTPSConnection = MockConnect
 
 class TestAppOpticsAlerts(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('key_test')
         self.name = 'my_alert'
         server.clean()
 
@@ -132,7 +132,7 @@ class TestAppOpticsAlerts(unittest.TestCase):
 
 class TestService(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('key_test')
         self.sample_payload = {
             'title': 'Email Ops',
             'type': 'mail',

@@ -11,7 +11,7 @@ appoptics_metrics.HTTPSConnection = MockConnect
 
 class TestAggregator(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('key_test')
         server.clean()
         self.agg = Aggregator(self.conn)
 

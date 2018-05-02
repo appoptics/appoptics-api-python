@@ -1,24 +1,23 @@
-python-appoptics-metrics
-==============
-
+appoptics-api-python
+====================
 
 A Python wrapper for the AppOptics Metrics API.
 
 ## Documentation Notes
 
 - New accounts
-  - Refer to [master](https://github.com/librato/python-appoptics-metrics/tree/master) for the latest documentation.
+  - Refer to [master](https://github.com/appoptics/appoptics-api-python/tree/master) for the latest documentation.
 
 
 ## Installation
 
 In your shell:
 
-  ```$ easy_install appoptics-metrics```
+  ```$ easy_install appoptics_metrics```
 
   or
 
-  ```$ pip install appoptics-metrics```
+  ```$ pip install appoptics_metrics```
 
 From your application or script:
 
@@ -26,24 +25,22 @@ From your application or script:
 
 ## Authentication
 
-Assuming you have
-[a Librato account](https://metrics.librato.com/), go to your
-[account settings page](https://metrics.librato.com/account) and get your
-username (email address) and token (long hexadecimal string).
+Assuming you have [an AppOptics account](https://www.appoptics.com/), go to your
+[organization settings page](https://my.appoptics.com/organization/tokens) and get your API token (long hexadecimal string).
 
 ```python
-  api = appoptics_metrics.connect('email', 'token')
+  api = appoptics_metrics.connect('token')
 ```
 
 ### Metric name sanitization
 
 When creating your connection you may choose to provide a sanitization function.
 This will be applied to any metric name you pass in. For example we provide a
-sanitization function that will ensure your metrics are legal librato names.
+sanitization function that will ensure your metrics are legal AppOptics names.
 This can be set as such:
 
 ```python
-  api = appoptics_metrics.connect('email', 'token', sanitizer=librato.sanitize_metric_name)
+  api = appoptics_metrics.connect('token', sanitizer=appoptics_metrics.sanitize_metric_name)
 ```
 
 By default no sanitization is done.
@@ -88,7 +85,7 @@ To retrieve a metric:
   #   {u'value': 80.0, u'time': 1502917147}
   # ],
   # u'tags': {u'city': u'sf'}}],
-  # u'attributes': {u'created_by_ua': u'python-librato/2.0.0...'
+  # u'attributes': {u'created_by_ua': u'appoptics_metrics/2.0.0...'
   # , u'aggregate': False}, u'resolution': 1}
 ```
 
@@ -143,7 +140,7 @@ in batch mode. We push measurements that are stored and when we are
 ready, they will be submitted in an efficient manner. Here is an example:
 
 ```python
-api = librato.connect('email', 'token')
+api = appoptics_metrics.connect('token')
 q = api.new_queue()
 q.add('temperature', 22.1, tags={'location': 'downstairs'})
 q.add('temperature', 23.1, tags={'location': 'upstairs'})
@@ -176,13 +173,13 @@ q = api.new_queue(auto_submit_count=400)
 
 Tags can be inherited from the queue or connection object if `inherit_tags=True` is passed as
 an attribute.  If inherit_tags is not passed, but tags are added to the measurement, the measurement
-tags will be the only tags added to that measurement.  
+tags will be the only tags added to that measurement.
 
 When there are tag collisions, the measurement, then the batch, then the connection is the order of
 priority.
 
 ```python
-api = appoptics_metrics.connect('email', 'token', tags={'company': 'librato', 'service': 'app'})
+api = appoptics_metrics.connect('token', tags={'company': 'librato', 'service': 'app'})
 
 # tags will be {'city': 'sf'}
 api.submit('temperature', 80, tags={'city': 'sf'})
@@ -423,7 +420,7 @@ that by using `api.set_timeout(timeout)`.
 ## Contribution
 
 Want to contribute? Need a new feature? Please open an
-[issue](https://github.com/librato/python-librato/issues).
+[issue](https://github.com/appoptics/appoptics-api-python/issues).
 
 ## Contributors
 
@@ -432,9 +429,12 @@ graciously handed over maintainership of the project to us and we're super-appre
 
 
 ## Build / publish
+
+```
 python3 setup.py bdist_wheel
 twine upload dist/*
+```
 
 ## Copyright
 
-Copyright (c) 2011-2017 [appoptics Inc.](http://librato.com) See LICENSE for details.
+Copyright (c) 2018 [Solarwinds, Inc.](http://www.solarwinds.com) See LICENSE for details.

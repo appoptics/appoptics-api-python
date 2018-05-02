@@ -1,5 +1,9 @@
 ## Changelog
 
+### Version 4.0.0
+* Renamed to appoptics_metrics
+* Removed username (email) from API connection credential
+
 ### Version 3.1.1
 * Introduce your message here.
 New AppOptics version.

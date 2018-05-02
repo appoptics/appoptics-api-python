@@ -10,7 +10,7 @@ appoptics_metrics.HTTPSConnection = MockConnect
 
 class TestAppOpticsAnnotations(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('key_test')
         server.clean()
 
     def test_get_annotation_stream(self):
