@@ -304,6 +304,23 @@ class TestAppOpticsAlertsIntegration(TestAppOpticsBase):
         alert.add_condition_for('cpu').above(0, 'count')
         alert.save()
 
+    def test_add_alert_with_condition_obj(self):
+        name = self.unique_name("test_add_alert_with_condition_obj")
+        alert = self.conn.create_alert(name)
+        tags = [
+            {
+                "name": "tag_name",
+                "grouped": False,
+                "values": ["tag_value"]
+            }
+        ]
+        cond = appoptics_metrics.alerts.Condition('metric_test', tags=tags).below(99)
+        alert.conditions.append(cond)
+        alert.save()
+        alert = self.conn.get_alert(name)
+        assert alert.conditions[0].condition_type == 'below'
+        assert alert.conditions[0].tags == tags
+
     def unique_name(self, prefix):
         name = prefix + str(time.time())
         self.alerts_created_during_test.append(name)

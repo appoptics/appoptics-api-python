@@ -49,6 +49,19 @@ class TestAppOpticsAlerts(unittest.TestCase):
     def test_create_alert_with_condition_obj(self):
         c1 = appoptics_metrics.alerts.Condition('cpu', 'web*').above(42)
         c2 = appoptics_metrics.alerts.Condition('mem').below(99)
+        tags = [
+            {
+                "name": "tag_name1",
+                "grouped": False,
+                "values": ["tag_value1"]
+            },
+            {
+                "name": "tag_name2",
+                "grouped": True,
+                "values": ["tag_value2"]
+            }
+        ]
+        c2.tags = tags
         alert = self.conn.create_alert(self.name, conditions=[c1, c2])
         self.assertEqual(len(alert.conditions), 2)
         self.assertEqual(alert.conditions[0].metric_name, 'cpu')
@@ -59,6 +72,7 @@ class TestAppOpticsAlerts(unittest.TestCase):
         self.assertEqual(alert.conditions[1].source, '*')
         self.assertEqual(alert.conditions[1].condition_type, 'below')
         self.assertEqual(alert.conditions[1].threshold, 99)
+        self.assertEqual(alert.conditions[1].tags, tags)
 
     def test_deleting_an_alert(self):
         alert = self.conn.create_alert(self.name)
