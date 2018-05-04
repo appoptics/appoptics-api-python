@@ -9,7 +9,7 @@ if sys.argv[-1] == 'publish':
     sys.exit()
 
 setup(
-    name="appoptics_metrics",
+    name="appoptics-metrics",
     version="4.0.0",        # Update also in __init__ ; look into zest.releaser to avoid having two versions
     description="Python API Wrapper for AppOptics Metrics",
     long_description="Python Wrapper for the AppOptics Metrics API: https://docs.appoptics.com/kb/custom_metrics/api",

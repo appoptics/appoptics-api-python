@@ -13,11 +13,11 @@ A Python wrapper for the AppOptics Metrics API.
 
 In your shell:
 
-  ```$ easy_install appoptics_metrics```
+  ```$ easy_install appoptics-metrics```
 
   or
 
-  ```$ pip install appoptics_metrics```
+  ```$ pip install appoptics-metrics```
 
 From your application or script:
 
