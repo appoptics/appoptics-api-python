@@ -6,7 +6,7 @@ import appoptics_metrics
 class TestAppOpticsUrlEncoding(unittest.TestCase):
 
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('key_test')
 
     def test_string_encoding(self):
         params = {"name": "abcd"}

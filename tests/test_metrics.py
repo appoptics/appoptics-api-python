@@ -27,7 +27,7 @@ fake_metric = {
 
 class TestAppOptics(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('user_test', 'key_test')
+        self.conn = appoptics_metrics.connect('key_test')
         server.clean()
 
     def test_list_metrics_when_there_are_no_metrics(self):

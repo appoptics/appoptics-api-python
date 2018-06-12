@@ -1,5 +1,9 @@
 ## Changelog
 
+### Version 4.0.0
+* Removed username (email) from API connection credential
+* Updated License
+
 ### Version 3.1.1
 * Introduce your message here.
 New AppOptics version.

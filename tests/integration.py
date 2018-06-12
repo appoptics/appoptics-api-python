@@ -27,6 +27,7 @@ from appoptics_metrics.exceptions import BadRequest
 import appoptics_metrics
 import os
 from random import randint
+import six
 import time
 logging.basicConfig(level=logging.INFO)
 
@@ -35,22 +36,21 @@ class TestAppOpticsBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """ Auth """
-        user = os.environ.get('APPOPTICS_USER')
         token = os.environ.get('APPOPTICS_TOKEN')
-        assert user and token, "Must set APPOPTICS_USER and APPOPTICS_TOKEN to run tests"
-        print "%s and %s" % (user, token)
+        assert token, "Must set APPOPTICS_TOKEN to run tests"
+        six.print_("Token: %s" % token)
 
         """ Ensure user really wants to run these tests """
         are_you_sure = os.environ.get('APPOPTICS_ALLOW_INTEGRATION_TESTS')
         assert are_you_sure == 'Y', "INTEGRATION TESTS WILL DELETE METRICS " \
             "IN YOUR ACCOUNT!!! " \
-            "If you are absolutely sure that you want to run tests "\
-            "against %s, please set APPOPTICS_ALLOW_INTEGRATION_TESTS "\
-            "to 'Y'" % user
+            "If you are absolutely sure that you want to run tests against "\
+            "the Org with %s, please set APPOPTICS_ALLOW_INTEGRATION_TESTS "\
+            "to 'Y'" % token
 
         """Initialize the APPOPTICS Connection"""
-        cls.conn = appoptics_metrics.connect(user, token)
-        cls.conn_sanitize = appoptics_metrics.connect(user, token, sanitizer=appoptics_metrics.sanitize_metric_name)
+        cls.conn = appoptics_metrics.connect(token)
+        cls.conn_sanitize = appoptics_metrics.connect(token, sanitizer=appoptics_metrics.sanitize_metric_name)
 
     # Since these are live tests, I'm adding this to account for the slight
     # delay in RDS replication lag at the API (if needed).
@@ -70,7 +70,7 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         connection.submit(name, value, type=type, description=desc)
         self.wait_for_replication()
         metric = connection.get(name)
-        assert metric and metric.name == connection.sanitize(name)
+        assert metric and metric.name == connection.sanitize(name).lower()
         assert metric.description == desc
         return metric
 
@@ -172,7 +172,7 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         self.conn.submit(name, 10, description=desc)
         self.wait_for_replication()
         gauge = self.conn.get(name)
-        assert gauge and gauge.name == name
+        assert gauge and gauge.name == name.lower()
         assert gauge.description == desc
 
         gauge = self.conn.get(name)
@@ -303,6 +303,23 @@ class TestAppOpticsAlertsIntegration(TestAppOpticsBase):
         alert.add_condition_for('cpu').stops_reporting_for(3600)
         alert.add_condition_for('cpu').above(0, 'count')
         alert.save()
+
+    def test_add_alert_with_condition_obj(self):
+        name = self.unique_name("test_add_alert_with_condition_obj")
+        alert = self.conn.create_alert(name)
+        tags = [
+            {
+                "name": "tag_name",
+                "grouped": False,
+                "values": ["tag_value"]
+            }
+        ]
+        cond = appoptics_metrics.alerts.Condition('metric_test', tags=tags).below(99)
+        alert.conditions.append(cond)
+        alert.save()
+        alert = self.conn.get_alert(name)
+        assert alert.conditions[0].condition_type == 'below'
+        assert alert.conditions[0].tags == tags
 
     def unique_name(self, prefix):
         name = prefix + str(time.time())
