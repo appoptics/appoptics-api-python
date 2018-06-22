@@ -138,9 +138,9 @@ class AppOpticsConnection(object):
                 headers['Content-Type'] = "application/json"
             else:
                 uri += "?" + self._url_encode_params(query_props)
-
         log.info("method=%s uri=%s" % (method, uri))
-        log.info("body(->): %s" % body)
+        log.info("body(->): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
+
         conn.request(method, uri, body=body, headers=headers)
 
         return conn.getresponse()
@@ -149,6 +149,8 @@ class AppOpticsConnection(object):
         """ Process the response from the server """
         success = True
         resp_data = None
+        log.info("status code(<-): %s" % resp.status)
+
         not_a_server_error = resp.status < 500
 
         if not_a_server_error:
@@ -245,16 +247,34 @@ class AppOpticsConnection(object):
     def list_all_metrics(self, **query_props):
         return self._get_paginated_results("metrics", Metric, **query_props)
 
-    def submit(self, name, value, type="gauge", **query_props):
-        if 'tags' in query_props or self.get_tags():
-            self.submit_tagged(name, value, **query_props)
-        else:
-            payload = {'gauges': [], 'counters': []}
-            metric = {'name': self.sanitize(name), 'value': value}
-            for k, v in query_props.items():
-                metric[k] = v
-            payload[type + 's'].append(metric)
-            self._mexe("metrics", method="POST", query_props=payload)
+    def submit(self, name, value, **query_props):
+        """
+        submit is used to submit a measurement to a metric.
+        :param name:
+        :param value:
+        :param query_props:
+        :return:
+        """
+        tags = self.get_tags()
+        tags.update(query_props.get('tags') or {})
+        query_props.update({'tags': tags})
+
+        payload = {}
+        # normal measurement submission
+        if value is not None:
+            # Let the API server decide it.
+            # if not tags:
+            #     raise exceptions.BadRequest('Must have at least one tag')
+            payload.update({'tags': tags})
+            payload.update({'measurements': [{'name': self.sanitize(name), 'value': value}]})
+        else:  # full measurement submission
+            measurements = {}
+            measurements.update(query_props)
+            measurements.update({'name': self.sanitize(name), 'value': value})
+            payload.update({'measurements': [measurements]})
+
+        self._mexe("measurements", method="POST", query_props=payload)
+
 
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
@@ -566,7 +586,8 @@ def _decode_body(resp):
     Read and decode HTTPResponse body based on charset and content-type
     """
     body = resp.read()
-    log.info("body(<-): %s" % body)
+    log.info("body(<-): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
+
     if not body:
         return None
 
