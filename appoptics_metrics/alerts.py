@@ -5,7 +5,7 @@ class Alert(object):
                  conditions=None, services=None, attributes=None, active=True, rearm_seconds=None):
         conditions = conditions or []
         services = services or []
-        attributes = attributes or []
+        attributes = attributes or {}
 
         self.connection = connection
         self.name = name
