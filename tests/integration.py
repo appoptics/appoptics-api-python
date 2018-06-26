@@ -131,15 +131,15 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         q.submit()
 
         for t in range(1, 10):
-            q.add('temperature', randint(20, 40), measure_time=time.time() + t)
+            q.add('temperature', randint(20, 40), time=time.time() + t)
         q.submit()
 
         for t in range(1, 10):
-            q.add('temperature', randint(20, 40), source='upstairs', measure_time=time.time() + t)
+            q.add('temperature', randint(20, 40), source='upstairs', time=time.time() + t)
         q.submit()
 
         for t in range(1, 50):
-            q.add('temperature', randint(20, 30), source='downstairs', measure_time=time.time() + t)
+            q.add('temperature', randint(20, 30), source='downstairs', time=time.time() + t)
         q.submit()
         self.conn.delete('temperature')
 

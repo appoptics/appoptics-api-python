@@ -264,11 +264,11 @@ class TestAppOpticsQueue(unittest.TestCase):
         assert gauges[1]['source'] == 'mysource'
 
         # All gauges should have the same measure_time
-        assert 'measure_time' in gauges[0]
-        assert 'measure_time' in gauges[1]
+        assert 'time' in gauges[0]
+        assert 'time' in gauges[1]
 
         # Test that time was snapped to 10s
-        assert gauges[0]['measure_time'] % 10 == 0
+        assert gauges[0]['time'] % 10 == 0
 
     def test_md_submit(self):
         q = self.q

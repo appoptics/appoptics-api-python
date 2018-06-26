@@ -182,13 +182,13 @@ class TestAggregator(unittest.TestCase):
         self.agg.period = None
         self.agg.add("foo", 42)
         assert 'measure_time' in self.agg.to_payload()
-        assert self.agg.to_payload()['measure_time'] == mt
+        assert self.agg.to_payload()['time'] == mt
 
     def test_measure_time_not_in_payload(self):
         self.agg.measure_time = None
         self.agg.period = None
         self.agg.add("foo", 42)
-        assert 'measure_time' not in self.agg.to_payload()
+        assert 'time' not in self.agg.to_payload()
 
     def test_floor_measure_time(self):
         # 2014-12-17 17:46:58 UTC
@@ -223,7 +223,7 @@ class TestAggregator(unittest.TestCase):
         # This will occur only if period is set
         self.agg.measure_time = 1418838418
         self.agg.period = 60
-        assert self.agg.to_payload()['measure_time'] == 1418838360
+        assert self.agg.to_payload()['time'] == 1418838360
 
     def test_submit_side_by_side(self):
         # Tagged and untagged measurements should be handled as separate

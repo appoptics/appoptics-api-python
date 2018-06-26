@@ -82,7 +82,7 @@ class Queue(object):
             nm['name'] = name
             # Set measure_time
             if mt:
-                nm['measure_time'] = mt
+                nm['time'] = mt
             # Set source
             if aggregator.source:
                 nm['source'] = aggregator.source

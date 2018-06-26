@@ -71,7 +71,7 @@ class ClientError(Exception):
                             messages.append(msg)
                     elif isinstance(error_list, dict):
                         for k in error_list:
-                            # e.g. "params: measure_time: "
+                            # e.g. "params: time: "
                             msg = "%s: %s: " % (key, k)
                             msg += self._flatten_error_message(error_list[k])
                             messages.append(msg)

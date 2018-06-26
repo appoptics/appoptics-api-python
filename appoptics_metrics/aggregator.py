@@ -16,7 +16,7 @@ class Aggregator(object):
         self.measurements = {}
         self.tagged_measurements = {}
         self.period = args.get('period')
-        self.measure_time = args.get('measure_time')
+        self.measure_time = args.get('time')
 
     # Get a shallow copy of the top-level tag set
     def get_tags(self):
@@ -88,13 +88,13 @@ class Aggregator(object):
             vals["name"] = metric_name
             body.append(vals)
 
-        result = {'gauges': body}
+        result = {'measurements': body}
         if self.source:
             result['source'] = self.source
 
         mt = self.floor_measure_time()
         if mt:
-            result['measure_time'] = mt
+            result['time'] = mt
 
         return result
 
@@ -160,7 +160,7 @@ class Aggregator(object):
         # Submit any legacy or tagged measurements to API
         # This will actually return an empty 200 response (no body)
         if self.measurements:
-            self.connection._mexe("metrics",
+            self.connection._mexe("measurements",
                                   method="POST",
                                   query_props=self.to_payload())
         if self.tagged_measurements:
