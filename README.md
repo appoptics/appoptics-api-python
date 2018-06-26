@@ -417,6 +417,9 @@ print(alert.services)
 Timeouts are provided by the underlying http client. By default we timeout at 10 seconds. You can change
 that by using `api.set_timeout(timeout)`.
 
+### Thread Safety
+The appoptics-metrics module currently does not do internal locking for thread safety. When used in multi-threaded applications, please add your own [thread synchronization](https://docs.python.org/3.5/library/threading.html) for sensitive operations.
+
 ## Contribution
 
 Want to contribute? Need a new feature? Please open an
