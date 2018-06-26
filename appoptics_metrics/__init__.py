@@ -13,7 +13,7 @@ import json
 import email.message
 from appoptics_metrics import exceptions
 from appoptics_metrics.queue import Queue
-from appoptics_metrics.metrics import Gauge, Counter, Metric
+from appoptics_metrics.metrics import Gauge, Metric
 from appoptics_metrics.alerts import Alert, Service
 from appoptics_metrics.annotations import Annotation
 from appoptics_metrics.spaces import Space, Chart
@@ -139,7 +139,10 @@ class AppOpticsConnection(object):
             else:
                 uri += "?" + self._url_encode_params(query_props)
         log.info("method=%s uri=%s" % (method, uri))
-        log.info("body(->): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
+        if body is None:
+            log.info("body(->): %s" % body)
+        else:
+            log.info("body(->): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
 
         conn.request(method, uri, body=body, headers=headers)
 
@@ -247,34 +250,17 @@ class AppOpticsConnection(object):
     def list_all_metrics(self, **query_props):
         return self._get_paginated_results("metrics", Metric, **query_props)
 
-    def submit(self, name, value, **query_props):
-        """
-        submit is used to submit a measurement to a metric.
-        :param name:
-        :param value:
-        :param query_props:
-        :return:
-        """
-        tags = self.get_tags()
-        tags.update(query_props.get('tags') or {})
-        query_props.update({'tags': tags})
-
-        payload = {}
-        # normal measurement submission
-        if value is not None:
-            # Let the API server decide it.
-            # if not tags:
-            #     raise exceptions.BadRequest('Must have at least one tag')
-            payload.update({'tags': tags})
-            payload.update({'measurements': [{'name': self.sanitize(name), 'value': value}]})
-        else:  # full measurement submission
-            measurements = {}
-            measurements.update(query_props)
-            measurements.update({'name': self.sanitize(name), 'value': value})
-            payload.update({'measurements': [measurements]})
-
-        self._mexe("measurements", method="POST", query_props=payload)
-
+    def submit(self, name, value, type="gauge", **query_props):
+        if 'tags' in query_props or self.get_tags():
+            self.submit_tagged(name, value, **query_props)
+        else:
+            raise Exception('At least one tag is needed.')  # TODO: make the execption more specific
+            # payload = {'gauges': [], 'counters': []}
+            # metric = {'name': self.sanitize(name), 'value': value}
+            # for k, v in query_props.items():
+            #     metric[k] = v
+            # payload[type + 's'].append(metric)
+            # self._mexe("metrics", method="POST", query_props=payload)
 
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
@@ -303,10 +289,8 @@ class AppOpticsConnection(object):
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Counter.from_dict(self, resp)
         else:
-            raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+            raise Exception('The server sent me something that is not a Gauge.')
 
     def get_tagged(self, name, **query_props):
         """Fetches multi-dimensional metrics"""
@@ -352,6 +336,12 @@ class AppOpticsConnection(object):
         query_props['composite'] = compose
         query_props['type'] = 'composite'
         return self.update(name, **query_props)
+
+    def create(self, name, type="gauge", **props):
+        props.update({'name': name})
+        props.update({'type': type})
+        return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=props)
+
 
     def update(self, name, **query_props):
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
@@ -586,7 +576,10 @@ def _decode_body(resp):
     Read and decode HTTPResponse body based on charset and content-type
     """
     body = resp.read()
-    log.info("body(<-): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
+    # if body is None:
+    log.info("body(<-): %s" % body)
+    # else:
+    #     log.info("body(<-): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
 
     if not body:
         return None

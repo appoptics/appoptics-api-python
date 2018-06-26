@@ -26,8 +26,6 @@ class Metric(object):
 
         if metric_type == "gauge":
             cls = Gauge
-        elif metric_type == "counter":
-            cls = Counter
         elif metric_type == "composite":
             # Since we don't have a formal Composite class, use Gauge for now
             cls = Gauge
@@ -57,15 +55,3 @@ class Gauge(Metric):
 
     def what_am_i(self):
         return 'gauges'
-
-
-class Counter(Metric):
-    """AppOptics Counter metric"""
-    def add(self, value, source=None, **params):
-        if source:
-            params['source'] = source
-
-        return self.connection.submit(self.name, value, type="counter", **params)
-
-    def what_am_i(self):
-        return 'counters'

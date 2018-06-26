@@ -12,7 +12,7 @@ class MockServer(object):
         self.clean()
 
     def clean(self):
-        self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
+        self.metrics = {'measurements': OrderedDict()}
         self.alerts = OrderedDict()
         self.services = OrderedDict()
         self.spaces = OrderedDict()
@@ -28,14 +28,12 @@ class MockServer(object):
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
-        for gn, g in self.metrics['gauges'].items():
+        for gn, g in self.metrics['measurements'].items():
             answer['metrics'].append(g)
-        for cn, c in self.metrics['counters'].items():
-            answer['metrics'].append(c)
         return json.dumps(answer).encode('utf-8')
 
     def create_metric(self, payload):
-        for metric_type in ['gauge', 'counter']:
+        for metric_type in ['gauge']:
             for metric in payload.get(metric_type + 's', []):
                 name = metric['name']
                 self.add_metric_to_store(metric, metric_type)
@@ -370,12 +368,10 @@ class MockServer(object):
         return ''
 
     def get_metric(self, name, payload):
-        gauges = self.metrics['gauges']
-        counters = self.metrics['counters']
+        gauges = self.metrics['measurements']
+        metric = ""
         if name in gauges:
             metric = gauges[name]
-        if name in counters:
-            metric = counters[name]
         return json.dumps(metric).encode('utf-8')
 
     def get_tagged_measurements(self, name, payload):
@@ -415,8 +411,7 @@ class MockServer(object):
         return json.dumps(response).encode('utf-8')
 
     def delete_metric(self, name, payload):
-        gauges = self.metrics['gauges']
-        counters = self.metrics['counters']
+        gauges = self.metrics['measurements']
         if not payload:
             payload = {}
         if 'names' not in payload:
@@ -428,8 +423,6 @@ class MockServer(object):
         for rm_name in payload['names']:
             if rm_name in gauges:
                 del gauges[rm_name]
-            if rm_name in counters:
-                del counters[rm_name]
         return ''
 
     def __an_empty_list_metrics(self):
@@ -439,7 +432,7 @@ class MockServer(object):
         return answer
 
     def add_batch_of_measurements(self, gc_measurements):
-        for gm in gc_measurements['gauges']:
+        for gm in gc_measurements['measurements']:
             new_gauge = {'name': gm['name'], 'type': gm['type']}
             self.add_gauge_to_store(new_gauge)
             self.add_gauge_measurement(gm)

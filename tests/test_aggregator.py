@@ -109,20 +109,19 @@ class TestAggregator(unittest.TestCase):
         self.agg.add('test.metric', 42)
         self.agg.add('test.metric', 43)
         assert self.agg.to_payload() == {
-            'gauges': [
+            'measurements': [
                 {'name': 'test.metric', 'count': 2, 'sum': 85, 'min': 42, 'max': 43}
             ],
             'source': 'mysource'
         }
-        assert 'gauges' in self.agg.to_payload()
-        assert 'counters' not in self.agg.to_payload()
+        assert 'measurements' in self.agg.to_payload()
 
     def test_to_payload_no_source(self):
         self.agg.source = None
         self.agg.add('test.metric', 42)
 
         assert self.agg.to_payload() == {
-            'gauges': [
+            'measurements': [
                 {
                     'name': 'test.metric',
                     'count': 1,

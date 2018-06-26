@@ -110,7 +110,7 @@ class Queue(object):
 
     def submit(self):
         for c in self.chunks:
-            self.connection._mexe("metrics", method="POST", query_props=c)
+            self.connection._mexe("measurements", method="POST", query_props=c)
         self.chunks = []
 
         for chunk in self.tagged_chunks:
@@ -131,7 +131,10 @@ class Queue(object):
 
     def _add_measurement(self, type, nm):
         if not self.chunks or self._num_measurements_in_current_chunk() == self.MAX_MEASUREMENTS_PER_CHUNK:
-            self.chunks.append({'gauges': [], 'counters': []})
+            self.chunks.append({'measurements': []})
+        # Dirty hack, the key `gauges` in the old API now becomes `measurements`
+        if type == 'gauge':
+            type = 'measurement'
         self.chunks[-1][type + 's'].append(nm)
 
     def _add_tagged_measurement(self, nm):
@@ -155,7 +158,7 @@ class Queue(object):
         else:
             if self.chunks:
                 cc = self.chunks[-1]
-                return len(cc['gauges']) + len(cc['counters'])
+                return len(cc['measurements'])
             else:
                 return 0
 

@@ -146,16 +146,7 @@ class TestAppOpticsQueue(unittest.TestCase):
     def test_default_type_measurement(self):
         q = self.q
         q.add('temperature', 22.1)
-        assert len(q._current_chunk()['gauges']) == 1
-        assert len(q._current_chunk()['counters']) == 0
-
-    def test_single_measurement_counter(self):
-        q = self.q
-        q.add('num_requests', 2000, type='counter')
-        assert len(q.chunks) == 1
-        assert q._num_measurements_in_current_chunk() == 1
-        assert len(q._current_chunk()['gauges']) == 0
-        assert len(q._current_chunk()['counters']) == 1
+        assert len(q._current_chunk()['measurements']) == 1
 
     def test_num_metrics_in_queue(self):
         q = self.q
@@ -165,7 +156,7 @@ class TestAppOpticsQueue(unittest.TestCase):
         assert q._num_measurements_in_queue() == 290
         # Now ensure multiple chunks
         for _ in range(100):
-            q.add('num_requests', randint(100, 300), type='counter')
+            q.add('num_requests', randint(100, 300), type='gauge')
         assert q._num_measurements_in_queue() == 390
 
     def test_auto_submit_on_metric_count(self):
@@ -260,7 +251,7 @@ class TestAppOpticsQueue(unittest.TestCase):
         a.add('bar', 37)
         q.add_aggregator(a)
 
-        gauges = q.chunks[0]['gauges']
+        gauges = q.chunks[0]['measurements']
         names = [g['name'] for g in gauges]
 
         assert len(q.chunks) == 1

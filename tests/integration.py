@@ -64,12 +64,13 @@ class TestAppOpticsBasic(TestAppOpticsBase):
     def test_list_metrics(self):
         metrics = self.conn.list_metrics()
 
-    def _add_and_verify_metric(self, name, value, desc, connection=None, type='gauge'):
+    def _add_and_verify_metric(self, name, desc, connection=None, type='gauge'):
         if not connection:
             connection = self.conn
-        connection.submit(name, value, type=type, description=desc)
+        connection.create(name, type=type, description=desc, tags={"region": "us-east-1"})
         self.wait_for_replication()
         metric = connection.get(name)
+        print("name: ", metric.name, " sanitize: ", connection.sanitize(name).lower())
         assert metric and metric.name == connection.sanitize(name).lower()
         assert metric.description == desc
         return metric
@@ -89,42 +90,42 @@ class TestAppOpticsBasic(TestAppOpticsBase):
     def test_long_sanitized_metric(self):
         name, desc = 'a' * 256, 'Too long, will error'
         with self.assertRaises(BadRequest):
-            self._add_and_verify_metric(name, 10, desc, self.conn)
-        self._add_and_verify_metric(name, 10, desc, self.conn_sanitize)
+            self._add_and_verify_metric(name, desc, self.conn)
+        self._add_and_verify_metric(name, desc, self.conn_sanitize)
         self._delete_and_verify_metric(name, self.conn_sanitize)
 
     def test_invalid_sanitized_metric(self):
         name, desc = r'I AM #*@#@983221 CRazy((\\\\] invalid', 'Crazy invalid'
         with self.assertRaises(BadRequest):
-            self._add_and_verify_metric(name, 10, desc, self.conn)
-        self._add_and_verify_metric(name, 10, desc, self.conn_sanitize)
+            self._add_and_verify_metric(name, desc, self.conn)
+        self._add_and_verify_metric(name, desc, self.conn_sanitize)
         self._delete_and_verify_metric(name, self.conn_sanitize)
 
     def test_create_and_delete_gauge(self):
         name, desc = 'Test', 'Test Gauge to be removed'
-        self._add_and_verify_metric(name, 10, desc)
+        self._add_and_verify_metric(name, desc)
         self._delete_and_verify_metric(name)
 
-    def test_create_and_delete_counter(self):
-        name, desc = 'Test_counter', 'Test Counter to be removed'
-        self._add_and_verify_metric(name, 10, desc, type='counter')
-        self._delete_and_verify_metric(name)
+    # def test_create_and_delete_counter(self):
+    #     name, desc = 'Test_counter', 'Test Counter to be removed'
+    #     self._add_and_verify_metric(name, desc, type='counter')
+    #     self._delete_and_verify_metric(name)
 
     def test_batch_delete(self):
         name_one, desc_one = 'Test_one', 'Test gauge to be removed'
-        name_two, desc_two = 'Test_two', 'Test counter to be removed'
-        self._add_and_verify_metric(name_one, 10, desc_one)
-        self._add_and_verify_metric(name_two, 10, desc_two, type='counter')
+        name_two, desc_two = 'Test_two', 'Test gauge2 to be removed'
+        self._add_and_verify_metric(name_one, desc_one)
+        self._add_and_verify_metric(name_two, desc_two, type='gauge')
         self._delete_and_verify_metric([name_one, name_two])
 
     def test_save_gauge_metrics(self):
-        name, desc = 'Test', 'Test Counter to be removed'
-        self.conn.submit(name, 10, description=desc)
-        self.conn.submit(name, 20, description=desc)
+        name, desc = 'Test', 'Test Gauge to be removed'
+        self.conn.create(name, "gauge", description=desc)
+        self.conn.create(name, "gauge", description=desc)
         self.conn.delete(name)
 
     def test_send_batch_gauge_measurements(self):
-        q = self.conn.new_queue()
+        q = self.conn.new_queue(tags={"region": "us-east-1"})
         for t in range(1, 10):
             q.add('temperature', randint(20, 40))
         q.submit()
@@ -146,7 +147,7 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         name_one, name_two = 'a' * 500, r'DSJAK#32102391S,m][][[{{]\\'
 
         def run_batch(connection):
-            q = connection.new_queue()
+            q = connection.new_queue(tags={"region": "us-east-1"})
             q.add(name_one, 10)
             q.add(name_two, 10)
             q.submit()
@@ -160,19 +161,19 @@ class TestAppOpticsBasic(TestAppOpticsBase):
     def test_submit_empty_queue(self):
         self.conn.new_queue().submit()
 
-    def test_send_batch_counter_measurements(self):
-        q = self.conn.new_queue()
-        for nr in range(1, 2):
-            q.add('num_req', nr, type='counter', source='server1', measure_time=time.time() - 1)
-            q.add('num_req', nr, type='counter', source='server2', measure_time=time.time() - 1)
-        q.submit()
+    # def test_send_batch_counter_measurements(self):
+    #     q = self.conn.new_queue()
+    #     for nr in range(1, 2):
+    #         q.add('num_req', nr, type='counter', source='server1', measure_time=time.time() - 1)
+    #         q.add('num_req', nr, type='counter', source='server2', measure_time=time.time() - 1)
+    #     q.submit()
 
     def test_update_metrics_attributes(self):
         name, desc = 'Test', 'A great gauge.'
-        self.conn.submit(name, 10, description=desc)
+        self.conn.create(name, 'gauge', description=desc)
         self.wait_for_replication()
         gauge = self.conn.get(name)
-        assert gauge and gauge.name == name.lower()
+        assert gauge and gauge.name == name
         assert gauge.description == desc
 
         gauge = self.conn.get(name)
@@ -188,7 +189,7 @@ class TestAppOpticsBasic(TestAppOpticsBase):
     def test_sanitized_update(self):
         name, desc = 'a' * 1000, 'too long, really'
         new_desc = 'different'
-        self.conn_sanitize.submit(name, 10, description=desc)
+        self.conn_sanitize.create(name, "gauge", description=desc)
         gauge = self.conn_sanitize.get(name)
         assert gauge.description == desc
 
@@ -207,7 +208,7 @@ class TestAppOpticsAlertsIntegration(TestAppOpticsBase):
         # Ensure metric names exist so we can create conditions on them
         for m in self.gauges_used_during_test:
             # Create or just update a gauge metric
-            self.conn.submit(m, 42)
+            self.conn.submit(m, 42, tags={"region": "us-east-1"})
 
     def tearDown(self):
         for name in self.alerts_created_during_test:
@@ -379,8 +380,8 @@ class TestSpacesApi(TestAppOpticsBase):
 
     def test_create_chart(self):
         # Ensure metrics exist
-        self.conn.submit('memory.free', 100)
-        self.conn.submit('memory.used', 200)
+        self.conn.submit('memory.free', 100, tags={"region": "us-east-1"})
+        self.conn.submit('memory.used', 200, tags={"region": "us-east-1"})
         # Create space
         space = appoptics_metrics.Space(self.conn, 'my space')
         space.save()
@@ -404,7 +405,7 @@ class TestSpacesApi(TestAppOpticsBase):
 
     def test_create_big_number(self):
         # Ensure metrics exist
-        self.conn.submit('memory.free', 100)
+        self.conn.submit('memory.free', 100, tags={"region": "us-east-1"})
         # Create space
         space = appoptics_metrics.Space(self.conn, 'my space')
         space.save()
