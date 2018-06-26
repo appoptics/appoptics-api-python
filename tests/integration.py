@@ -70,9 +70,9 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         connection.create(name, type=type, description=desc, tags={"region": "us-east-1"})
         self.wait_for_replication()
         metric = connection.get(name)
-        print("name: ", metric.name, " sanitize: ", connection.sanitize(name).lower())
-        assert metric and metric.name == connection.sanitize(name).lower()
-        assert metric.description == desc
+        six.print_("name: ", metric.name, " sanitize: ", connection.sanitize(name).lower())
+        assert metric and metric.name.lower() == connection.sanitize(name).lower()
+        assert metric.description.lower() == desc.lower()
         return metric
 
     def _delete_and_verify_metric(self, names, connection=None):
