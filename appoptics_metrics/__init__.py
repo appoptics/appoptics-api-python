@@ -54,22 +54,23 @@ def sanitize_no_op(metric_name):
 class AppOpticsConnection(object):
     """AppOptics API Connection.
     Usage:
-    >>> conn = AppOpticsConnection(api_key)
-    >>> conn.list_metrics()
+    conn = AppOpticsConnection(api_key)
+    conn.list_metrics()
     [...]
     """
 
     def __init__(self, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
-                 protocol="https", tags={}):
+                 protocol="https", tags=None):
         """Create a new connection to AppOptics Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
         :param api_key: The API Key (token) to use to authenticate
         :type api_key: str
         """
+        tags = tags or {}
         try:
             self.api_key = api_key.encode('ascii')
-        except:
+        except Exception:
             raise TypeError("AppOptics only supports ascii for the credentials")
 
         if protocol not in ["http", "https"]:
@@ -117,7 +118,8 @@ class AppOpticsConnection(object):
         headers['User-Agent'] = self._compute_ua()
         return headers
 
-    def _url_encode_params(self, params={}):
+    def _url_encode_params(self, params=None):
+        params = params or {}
         if not isinstance(params, dict):
             raise Exception("You must pass in a dictionary!")
         params_list = []
@@ -562,7 +564,7 @@ class AppOpticsConnection(object):
 
 
 def connect(api_key=None, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
-            protocol="https", tags={}):
+            protocol="https", tags=None):
     """
     Connect to AppOptics Metrics
     """

@@ -52,7 +52,8 @@ class Space(object):
         chart = self.new_chart(name, **kwargs)
         return chart.save()
 
-    def add_line_chart(self, name, streams=[]):
+    def add_line_chart(self, name, streams=None):
+        streams = streams or []
         return self.add_chart(name, streams=streams)
 
     def add_single_line_chart(self, name, metric=None, source='*',
@@ -65,7 +66,8 @@ class Space(object):
             stream['summary_function'] = summary_function
         return self.add_line_chart(name, streams=[stream])
 
-    def add_stacked_chart(self, name, streams=[]):
+    def add_stacked_chart(self, name, streams=None):
+        streams = streams or []
         return self.add_chart(name, type='stacked', streams=streams)
 
     def add_single_stacked_chart(self, name, metric, source='*'):
@@ -127,12 +129,13 @@ class Chart(object):
     #   "use_log_yaxis": true
     # }
     def __init__(self, connection, name=None, id=None, type='line',
-                 space_id=None, streams=[],
+                 space_id=None, streams=None,
                  min=None, max=None,
                  label=None,
                  use_log_yaxis=None,
                  use_last_value=None,
                  related_space=None):
+        streams = streams or []
         self.connection = connection
         self.name = name
         self.type = type

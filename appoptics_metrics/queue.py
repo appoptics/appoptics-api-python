@@ -17,7 +17,8 @@ class Queue(object):
     """
     MAX_MEASUREMENTS_PER_CHUNK = 300  # based docs; on POST /metrics
 
-    def __init__(self, connection, auto_submit_count=None, tags={}):
+    def __init__(self, connection, auto_submit_count=None, tags=None):
+        tags = tags or {}
         self.connection = connection
         self.tags = dict(tags)
         self.chunks = []
