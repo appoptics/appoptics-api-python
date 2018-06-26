@@ -131,9 +131,6 @@ class MockServer(object):
         else:
             return json.dumps(self.instruments[int(_id)]).encode('utf-8')
 
-    def __an_empty_list_metrics(self):
-        answer = {}
-
     def create_alert(self, payload):
         self.last_a_id += 1
         payload["id"] = self.last_a_id

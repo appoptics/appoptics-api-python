@@ -213,20 +213,37 @@ class AppOpticsConnection(object):
         else:
             return resp
 
-    # Get a shallow copy of the top-level tag set
     def get_tags(self):
+        """
+        Get a shallow copy of the top-level tag set
+        :return:
+        """
         return dict(self.tags)
 
-    # Define the top-level tag set for posting measurements
     def set_tags(self, d):
+        """
+        Define the top-level tag set for posting measurements
+        :param d:
+        :return:
+        """
         self.tags = dict(d)    # Create a copy
 
-    # Add to the top-level tag set
     def add_tags(self, d):
+        """
+        Add to the top-level tag set
+        :param d:
+        :return:
+        """
         self.tags.update(d)
 
-    # Return all items for a "list" request
     def _get_paginated_results(self, entity, klass, **query_props):
+        """
+        Return all items for a "list" request
+        :param entity:
+        :param klass:
+        :param query_props:
+        :return:
+        """
         resp = self._mexe(entity, query_props=query_props)
 
         results = self._parse(resp, entity, klass)
@@ -343,7 +360,6 @@ class AppOpticsConnection(object):
         props.update({'name': name})
         props.update({'type': type})
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=props)
-
 
     def update(self, name, **query_props):
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
@@ -516,9 +532,14 @@ class AppOpticsConnection(object):
         resp['space_id'] = space_id
         return Chart.from_dict(self, resp)
 
-    # Find a chart by name in a space. Return the first match, so if multiple
-    # charts have the same name, you'll only get the first one
     def find_chart(self, name, space):
+        """
+        Find a chart by name in a space. Return the first match, so if multiple
+        charts have the same name, you'll only get the first one
+        :param name:
+        :param space:
+        :return:
+        """
         charts = self.list_charts_in_space(space)
         for chart in charts:
             if chart.name and chart.name.lower() == name.lower():

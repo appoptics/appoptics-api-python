@@ -90,7 +90,7 @@ class TestStreamModel(unittest.TestCase):
         s = Stream(**attrs)
         # color is a known attribute
         self.assertEqual(s.color, '#f00')
-        self.assertEqual(s.something, 'foo')
+        self.assertEqual(getattr(s, "something"), 'foo')
 
     def test_get_payload(self):
         self.assertEqual(Stream(metric='my.metric').get_payload(),
