@@ -275,7 +275,7 @@ class AppOpticsConnection(object):
 
         if 'tags' in query_props or self.get_tags():
             self.submit_tagged(name, value, **query_props)
-        else: # at least one `tags` is required
+        else:  # at least one `tags` is required
             raise Exception('At least one tag is needed.')
 
     def submit_tagged(self, name, value, **query_props):

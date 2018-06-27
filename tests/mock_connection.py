@@ -73,7 +73,8 @@ class MockServer(object):
             p_to_metric = self.metrics[type + 's'][name]
             # Seems we don't support `source` now, all measurements go to `unassgined`
             source = "unassigned"
-            p_to_metric['measurements'][source] = []
+            if source not in p_to_metric['measurements']:
+                p_to_metric['measurements'][source] = []
             p_to_metric['measurements'][source].append({"value": value})
 
         return ''
@@ -387,7 +388,7 @@ class MockServer(object):
             raise Exception('md get requires a start or duration parameter')
 
         measurements = [t for t in self.tagged_measurements[name][tag][value] if (t[0] >= start and t[0] <= end)]
-        measurements.sort(key=lambda x: x[1])
+        # measurements.sort(key=lambda x: x[1])
         m_dicts = [{'time': t[0], 'value': t[1]} for t in measurements if len(t) > 0]
 
         response = {}

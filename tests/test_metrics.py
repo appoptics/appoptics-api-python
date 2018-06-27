@@ -114,6 +114,13 @@ class TestAppOptics(unittest.TestCase):
         assert len(gauge['series'][0]['measurements']) == 2
         assert gauge['series'][0]['measurements'][-1]['value'] == 1
 
+        self.conn.submit(name, 5)
+        gauge = self.conn.get_measurements(name, duration=86400, tags=tags)
+
+        assert gauge.get('name') == name
+        assert len(gauge['series'][0]['measurements']) == 3
+        assert gauge['series'][0]['measurements'][-1]['value'] == 5
+
     def test_md_inherit_tags(self):
         self.conn.set_tags({'company': 'AppOptics', 'hi': 'four'})
 
