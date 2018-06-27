@@ -7,7 +7,6 @@ except ImportError:
 import appoptics_metrics
 import time
 from mock_connection import MockConnect, server
-from appoptics_metrics.metrics import Gauge
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server

@@ -105,11 +105,6 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         self._add_and_verify_metric(name, desc)
         self._delete_and_verify_metric(name)
 
-    # def test_create_and_delete_counter(self):
-    #     name, desc = 'Test_counter', 'Test Counter to be removed'
-    #     self._add_and_verify_metric(name, desc, type='counter')
-    #     self._delete_and_verify_metric(name)
-
     def test_batch_delete(self):
         name_one, desc_one = 'Test_one', 'Test gauge to be removed'
         name_two, desc_two = 'Test_two', 'Test gauge2 to be removed'
@@ -118,9 +113,9 @@ class TestAppOpticsBasic(TestAppOpticsBase):
         self._delete_and_verify_metric([name_one, name_two])
 
     def test_save_gauge_metrics(self):
-        name, desc = 'Test', 'Test Gauge to be removed'
-        self.conn.create_metric(name, "gauge", description=desc)
-        self.conn.create_metric(name, "gauge", description=desc)
+        name = 'Test'
+        self.conn.submit(name, 10, tags={"region": "us-east-1"})
+        self.conn.submit(name, 20, tags={"region": "us-east-1"})
         self.conn.delete(name)
 
     def test_send_batch_gauge_measurements(self):
@@ -159,13 +154,6 @@ class TestAppOpticsBasic(TestAppOpticsBase):
 
     def test_submit_empty_queue(self):
         self.conn.new_queue().submit()
-
-    # def test_send_batch_counter_measurements(self):
-    #     q = self.conn.new_queue()
-    #     for nr in range(1, 2):
-    #         q.add('num_req', nr, type='counter', source='server1', measure_time=time.time() - 1)
-    #         q.add('num_req', nr, type='counter', source='server2', measure_time=time.time() - 1)
-    #     q.submit()
 
     def test_update_metrics_attributes(self):
         name, desc = 'Test', 'A great gauge.'
