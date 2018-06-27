@@ -426,12 +426,6 @@ class MockServer(object):
         answer['query'] = {}
         return answer
 
-    def add_batch_of_measurements(self, gc_measurements):
-        for gm in gc_measurements['measurements']:
-            new_gauge = {'name': gm['name'], 'type': gm['type']}
-            self.add_gauge_to_store(new_gauge)
-            self.add_gauge_measurement(gm)
-
     def add_metric_to_store(self, g, m_type):
         if g['name'] not in self.metrics[m_type + 's']:
             g['type'] = m_type
@@ -441,10 +435,6 @@ class MockServer(object):
                 g['attributes'] = {}
             g['measurements'] = {}
             self.metrics[m_type + 's'][g['name']] = g
-
-    def delete_gauge(self, name):
-        del self.gauges[name]
-        return ''
 
     def _chart_ids_for_space_id(self, space_id):
         return [c['id'] for c in self.spaces[int(space_id)]['charts']]
@@ -496,9 +486,6 @@ class MockResponse(object):
             d = parse_qs(query)
             # Flatten since parse_qs likes to build lists of values
             payload = {k: v[0] for k, v in six.iteritems(d)}
-            # The new API returns metric name with measurements retrieval results
-            # so we need to mock it here. Put it into payload to avoid adding a new
-            # parameter.
             return server.get_tagged_measurements(self._extract_from_url(tagged=True), payload)
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()

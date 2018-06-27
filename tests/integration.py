@@ -67,10 +67,9 @@ class TestAppOpticsBasic(TestAppOpticsBase):
     def _add_and_verify_metric(self, name, desc, connection=None, type='gauge'):
         if not connection:
             connection = self.conn
-        connection.create(name, type=type, description=desc, tags={"region": "us-east-1"})
+        connection.create_metric(name, type=type, description=desc, tags={"region": "us-east-1"})
         self.wait_for_replication()
         metric = connection.get(name)
-        six.print_("name: ", metric.name, " sanitize: ", connection.sanitize(name).lower())
         assert metric and metric.name.lower() == connection.sanitize(name).lower()
         assert metric.description.lower() == desc.lower()
         return metric
@@ -120,8 +119,8 @@ class TestAppOpticsBasic(TestAppOpticsBase):
 
     def test_save_gauge_metrics(self):
         name, desc = 'Test', 'Test Gauge to be removed'
-        self.conn.create(name, "gauge", description=desc)
-        self.conn.create(name, "gauge", description=desc)
+        self.conn.create_metric(name, "gauge", description=desc)
+        self.conn.create_metric(name, "gauge", description=desc)
         self.conn.delete(name)
 
     def test_send_batch_gauge_measurements(self):
@@ -170,7 +169,7 @@ class TestAppOpticsBasic(TestAppOpticsBase):
 
     def test_update_metrics_attributes(self):
         name, desc = 'Test', 'A great gauge.'
-        self.conn.create(name, 'gauge', description=desc)
+        self.conn.create_metric(name, 'gauge', description=desc)
         self.wait_for_replication()
         gauge = self.conn.get(name)
         assert gauge and gauge.name == name
@@ -189,7 +188,7 @@ class TestAppOpticsBasic(TestAppOpticsBase):
     def test_sanitized_update(self):
         name, desc = 'a' * 1000, 'too long, really'
         new_desc = 'different'
-        self.conn_sanitize.create(name, "gauge", description=desc)
+        self.conn_sanitize.create_metric(name, "gauge", description=desc)
         gauge = self.conn_sanitize.get(name)
         assert gauge.description == desc
 

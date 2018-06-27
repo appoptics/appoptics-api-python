@@ -353,9 +353,6 @@ class AppOpticsConnection(object):
 
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
-    def get_measurements(self, name, **query_props):
-        return self.get_tagged(name, **query_props)
-
     def get_composite(self, compose, **query_props):
         if self.get_tags():
             return self.get_composite_tagged(compose, **query_props)
@@ -382,13 +379,40 @@ class AppOpticsConnection(object):
         query_props['type'] = 'composite'
         return self.update(name, **query_props)
 
+    def create_metric(self, name, type="gauge", **props):
+        """
+        create_metric creates a new metric with the provided name and properties
+        :param name:
+        :param type:
+        :param props:
+        :return:
+        """
+        return self.create(name, type, **props)
+
     def create(self, name, type="gauge", **props):
         props.update({'name': name})
         props.update({'type': type})
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=props)
 
+    def update_metric(self, name, **query_props):
+        """
+        update_metric updates the properties of a metric
+        :param name:
+        :param query_props:
+        :return:
+        """
+        return self.update(name, **query_props)
+
     def update(self, name, **query_props):
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
+
+    def delete_metric(self, names):
+        """
+        delete_metric deletes one or multiple metrics
+        :param names:
+        :return:
+        """
+        return self.delete(names)
 
     def delete(self, names):
         if isinstance(names, six.string_types):
