@@ -3,6 +3,7 @@ import json
 import time
 import re
 import six
+import copy
 from six.moves.urllib.parse import urlparse, parse_qs
 
 
@@ -12,7 +13,7 @@ class MockServer(object):
         self.clean()
 
     def clean(self):
-        self.metrics = {'measurements': OrderedDict()}
+        self.metrics = {'gauges': OrderedDict()}
         self.alerts = OrderedDict()
         self.services = OrderedDict()
         self.spaces = OrderedDict()
@@ -28,62 +29,52 @@ class MockServer(object):
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
-        for gn, g in self.metrics['measurements'].items():
+        for gn, g in self.metrics['gauges'].items():
             answer['metrics'].append(g)
         return json.dumps(answer).encode('utf-8')
 
     def create_metric(self, payload):
         for metric_type in ['gauge']:
             for metric in payload.get(metric_type + 's', []):
-                name = metric['name']
                 self.add_metric_to_store(metric, metric_type)
-
-                # The metric comes also with a value, we have to add it
-                # to the measurements (for a particular source if available)
-                value = None
-                if 'value' in metric:
-                    value = metric.pop('value')
-                elif 'sum' in metric and 'count' in metric:
-                    value = metric.pop('sum') / metric.pop('count')
-
-                if value is not None:
-                    if 'source' not in metric:
-                        source = 'unassigned'
-                    else:
-                        source = metric['source']
-                        del metric['source']
-
-                    # Create a new source for the measurements if necessary
-                    p_to_metric = self.metrics[metric_type + 's'][name]
-                    if source not in p_to_metric['measurements']:
-                        p_to_metric['measurements'][source] = []
-                    p_to_metric['measurements'][source].append({"value": value})
-
         return ''
 
-    def create_tagged_measurements(self, payload):
+    def create_tagged_measurements(self, payload, type="gauge"):
+        # Here we just get the top-level tags
         tags = payload.get('tags', {})
         def_time = payload.get('time', int(time.time()))
-        for metric in payload['measurements']:
-            name = metric['name']
+        for measurement in payload['measurements']:
+            name = measurement['name']
+            # add the metric name to the backend store
+            self.add_metric_to_store(measurement, type)
 
-            mt = metric.get('time', def_time)
+            # Add it to the measurements list
+            mt = measurement.get('time', def_time)
 
-            if 'value' in metric:
-                value = metric['value']
-            elif 'sum' in metric:
-                if 'count' not in metric or metric['count'] != 1:
+            if 'value' in measurement:
+                value = measurement['value']
+            elif 'sum' in measurement:
+                if 'count' not in measurement or measurement['count'] != 1:
                     raise Exception('mock_connection only supports a count value of one')
-                value = metric['sum']
+                value = measurement['sum']
             else:
                 raise Exception('md submit payload must provide value or sum/count attributes')
 
-            m_tags = tags
-            if 'tags' in metric:
-                m_tags.update(metric['tags'])
+            m_tags = copy.deepcopy(tags)
+            # Embedded tags will override the top-level ones
+            if 'tags' in measurement:
+                m_tags.update(measurement['tags'])
 
+            # Now we get the tags belongs to this specific measurement
             for tag in m_tags:
                 self.tagged_measurements[name][tag][m_tags[tag]].append((mt, value))
+
+            # Add measurements to the metrics's measurements list
+            p_to_metric = self.metrics[type + 's'][name]
+            # Seems we don't support `source` now, all measurements go to `unassgined`
+            source = "unassigned"
+            p_to_metric['measurements'][source] = []
+            p_to_metric['measurements'][source].append({"value": value})
 
         return ''
 
@@ -365,7 +356,7 @@ class MockServer(object):
         return ''
 
     def get_metric(self, name, payload):
-        gauges = self.metrics['measurements']
+        gauges = self.metrics['gauges']
         metric = ""
         if name in gauges:
             metric = gauges[name]
@@ -405,10 +396,16 @@ class MockServer(object):
         else:
             response['series'] = []
 
+        # name and resolution are returned as a part of the measurement retrieval result.
+        if payload.get('resolution', None):
+            response['resolution'] = payload.get('resolution')
+
+        response['name'] = name
+
         return json.dumps(response).encode('utf-8')
 
     def delete_metric(self, name, payload):
-        gauges = self.metrics['measurements']
+        gauges = self.metrics['gauges']
         if not payload:
             payload = {}
         if 'names' not in payload:
@@ -498,6 +495,9 @@ class MockResponse(object):
             d = parse_qs(query)
             # Flatten since parse_qs likes to build lists of values
             payload = {k: v[0] for k, v in six.iteritems(d)}
+            # The new API returns metric name with measurements retrieval results
+            # so we need to mock it here. Put it into payload to avoid adding a new
+            # parameter.
             return server.get_tagged_measurements(self._extract_from_url(tagged=True), payload)
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
@@ -548,7 +548,7 @@ class MockResponse(object):
         return self._method_is('GET') and self._path_is('/v1/metrics')
 
     def _req_is_create_metric(self):
-        return self._method_is('POST') and self._path_is('/v1/metrics')
+        return self._method_is('PUT') and self._path_is('/v1/metrics')
 
     def _req_is_create_tagged_measurements(self):
         return self._method_is('POST') and self._path_is('/v1/measurements')

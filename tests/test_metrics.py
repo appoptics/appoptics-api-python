@@ -7,6 +7,7 @@ except ImportError:
 import appoptics_metrics
 import time
 from mock_connection import MockConnect, server
+from appoptics_metrics.metrics import Gauge
 
 # logging.basicConfig(level=logging.DEBUG)
 # Mock the server
@@ -27,7 +28,7 @@ fake_metric = {
 
 class TestAppOptics(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('key_test')
+        self.conn = appoptics_metrics.connect('key_test', tags={"region": "us-east-1"})
         server.clean()
 
     def test_list_metrics_when_there_are_no_metrics(self):
@@ -92,40 +93,26 @@ class TestAppOptics(unittest.TestCase):
         assert len(self.conn.list_metrics()) == 0
 
     def test_get_gauge_basic(self):
-        name, desc = '1', 'desc 1'
-        self.conn.submit(name, 10, description=desc)
-        gauge = self.conn.get(name)
+        # Create a simple metric through submitting a measurement
+        name = '1'
+        self.conn.submit(name, 10)
+        gauge = self.conn.get_metric(name)
         assert isinstance(gauge, appoptics_metrics.metrics.Gauge)
         assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements['unassigned']) == 1
-        assert gauge.measurements['unassigned'][0]['value'] == 10
-
-    def test_send_single_measurements_for_gauge_with_source(self):
-        name, desc, src = 'Test', 'A Test Gauge.', 'from_source'
-        self.conn.submit(name, 10, description=desc, source=src)
-        gauge = self.conn.get(name)
-        assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements[src]) == 1
-        assert gauge.measurements[src][0]['value'] == 10
 
     def test_add_in_gauge(self):
-        name, desc, src = 'Test', 'A Test Gauge.', 'from_source'
-        self.conn.submit(name, 10, description=desc, source=src)
-        gauge = self.conn.get(name)
-        assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements[src]) == 1
-        assert gauge.measurements[src][0]['value'] == 10
+        name, desc, tags = 'Test', 'A Test Gauge.', {"region": "us-east-1"}
+        self.conn.submit(name, 10, tags=tags)
+        gauge = self.conn.get_measurements(name, duration=86400, tags=tags)
+        assert gauge['name'] == name
+        assert gauge['series'][0]['measurements'][0]['value'] == 10
 
-        gauge.add(1, source=src)
+        self.conn.submit(name, 1)
+        gauge = self.conn.get_measurements(name, duration=86400, tags=tags)
 
-        gauge = self.conn.get(name)
-        assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements[src]) == 2
-        assert gauge.measurements[src][-1]['value'] == 1
+        assert gauge.get('name') == name
+        assert len(gauge['series'][0]['measurements']) == 2
+        assert gauge['series'][0]['measurements'][-1]['value'] == 1
 
     def test_md_inherit_tags(self):
         self.conn.set_tags({'company': 'AppOptics', 'hi': 'four'})

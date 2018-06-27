@@ -1,3 +1,5 @@
+import copy
+
 class Queue(object):
     """Sending small amounts of measurements in a single HTTP request
     is inefficient. The payload is small and the overhead in the server
@@ -41,18 +43,17 @@ class Queue(object):
         """add measurements to the Q"""
         if 'tags' in query_props or len(self.tags) > 0 or len(self.connection.get_tags()) > 0:
             self.add_tagged(name, value, **query_props)
-        else:
-            nm = {}  # new measurement
-            nm['name'] = self.connection.sanitize(name)
-            nm['value'] = value
-
-            for pn, v in query_props.items():
-                nm[pn] = v
-
-            self._add_measurement(type, nm)
-            self._auto_submit_if_necessary()
+        else:  # No tags found
+            raise Exception('At least one tag is needed.')
 
     def add_tagged(self, name, value, **query_props):
+        """
+        add_tagged is deprecated, use add instead.
+        :param name:
+        :param value:
+        :param query_props:
+        :return:
+        """
         nm = {}  # new measurement
         nm['name'] = self.connection.sanitize(name)
         nm['sum'] = value

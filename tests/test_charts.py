@@ -12,7 +12,7 @@ appoptics_metrics.HTTPSConnection = MockConnect
 
 class ChartsTest(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('key_test')
+        self.conn = appoptics_metrics.connect('key_test', tags={"region": "us-east-1"})
         server.clean()
 
 

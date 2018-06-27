@@ -47,10 +47,8 @@ class Metric(object):
 
 class Gauge(Metric):
     """AppOptics Gauge metric"""
-    def add(self, value, source=None, **params):
+    def add(self, value, **params):
         """Add a new measurement to this gauge"""
-        if source:
-            params['source'] = source
         return self.connection.submit(self.name, value, type="gauge", **params)
 
     def what_am_i(self):
