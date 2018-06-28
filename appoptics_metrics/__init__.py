@@ -269,6 +269,16 @@ class AppOpticsConnection(object):
     def list_all_metrics(self, **query_props):
         return self._get_paginated_results("metrics", Metric, **query_props)
 
+    def submit_measurement(self, name, value, **query_props):
+        """
+        submit_measurement is an alias for submit()
+        :param name:
+        :param value:
+        :param query_props:
+        :return:
+        """
+        return self.submit(name, value, **query_props)
+
     def submit(self, name, value, **query_props):
         # silently ignore `type` for measurements submission
         query_props.pop("type", None)
