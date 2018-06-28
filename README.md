@@ -57,10 +57,16 @@ To iterate over your metrics:
 or use `list_all_metrics()` to iterate over all your metrics with
 transparent pagination.
 
-Let's now create a metric:
+Let's now create a measurement for a specific metric. The metric will be created if it does not exist:
 
 ```python
   api.submit("temperature", 80, tags={"city": "sf"})
+```
+
+There is also an alias which does the same thing (but in a more explicit name):
+
+```python
+  api.submit_measurement("temperature", 80, tags={"city": "sf"})
 ```
 
 View your metric names:
@@ -70,11 +76,11 @@ View your metric names:
       print(m.name)
 ```
 
-To retrieve a metric:
+To retrieve a metric or measurement:
 
 ```python
   # Retrieve metric metadata ONLY
-  gauge = api.get("temperature")
+  gauge = api.get("temperature")  # or use the alias: api.get_metric(...)
   gauge.name # "temperature"
 
   # Retrieve measurements from last 15 minutes
@@ -129,6 +135,18 @@ Delete a metric:
 
 ```python
   api.delete("temperature")
+```
+
+Aliases are provided for methods manipulating metrics and measurements:
+
+```python
+    create(...)     -> create_metric(...)
+    submit(...)     -> submit_measurement(...)
+    
+    update(...)     -> update_metric(...)
+    delete(...)     -> delete_metric(...)
+    get(...)        -> get_metric(...)
+    get_tagged(...) -> get_measurements(...)
 ```
 
 ## Sending measurements in batch mode

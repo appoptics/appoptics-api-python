@@ -48,11 +48,11 @@ class TestClientError(unittest.TestCase):
     def test_parse_error_message_params(self):
         error_resp = {
             "errors": {
-                "params": {"measure_time": ["too far in past"]}
+                "params": {"time": ["too far in past"]}
             }
         }
         ex = exceptions.ClientError(400, error_resp)
-        self.assertEqual("params: measure_time: too far in past", ex._parse_error_message())
+        self.assertEqual("params: time: too far in past", ex._parse_error_message())
 
     def test_parse_error_message_params_multi_message(self):
         error_resp = {
@@ -67,14 +67,14 @@ class TestClientError(unittest.TestCase):
         error_resp = {
             "errors": {
                 "params": {
-                    "measure_time": ["too far in past"],
+                    "time": ["too far in past"],
                     "name": "mymetricname"
                 }
             }
         }
         ex = exceptions.ClientError(400, error_resp)
         msg = ex._parse_error_message()
-        self.assertRegexpMatches(msg, "params: measure_time: too far in past")
+        self.assertRegexpMatches(msg, "params: time: too far in past")
         self.assertRegexpMatches(msg, "params: name: mymetricname")
 
     def test_parse_error_message_params_multiple_2nd_level(self):

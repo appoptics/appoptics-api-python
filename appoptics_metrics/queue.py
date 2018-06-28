@@ -1,3 +1,5 @@
+import copy
+
 class Queue(object):
     """Sending small amounts of measurements in a single HTTP request
     is inefficient. The payload is small and the overhead in the server
@@ -17,7 +19,8 @@ class Queue(object):
     """
     MAX_MEASUREMENTS_PER_CHUNK = 300  # based docs; on POST /metrics
 
-    def __init__(self, connection, auto_submit_count=None, tags={}):
+    def __init__(self, connection, auto_submit_count=None, tags=None):
+        tags = tags or {}
         self.connection = connection
         self.tags = dict(tags)
         self.chunks = []
@@ -40,18 +43,17 @@ class Queue(object):
         """add measurements to the Q"""
         if 'tags' in query_props or len(self.tags) > 0 or len(self.connection.get_tags()) > 0:
             self.add_tagged(name, value, **query_props)
-        else:
-            nm = {}  # new measurement
-            nm['name'] = self.connection.sanitize(name)
-            nm['value'] = value
-
-            for pn, v in query_props.items():
-                nm[pn] = v
-
-            self._add_measurement(type, nm)
-            self._auto_submit_if_necessary()
+        else:  # No tags found
+            raise Exception('At least one tag is needed.')
 
     def add_tagged(self, name, value, **query_props):
+        """
+        add_tagged is deprecated, use add instead.
+        :param name:
+        :param value:
+        :param query_props:
+        :return:
+        """
         nm = {}  # new measurement
         nm['name'] = self.connection.sanitize(name)
         nm['sum'] = value
@@ -82,7 +84,7 @@ class Queue(object):
             nm['name'] = name
             # Set measure_time
             if mt:
-                nm['measure_time'] = mt
+                nm['time'] = mt
             # Set source
             if aggregator.source:
                 nm['source'] = aggregator.source
@@ -110,7 +112,7 @@ class Queue(object):
 
     def submit(self):
         for c in self.chunks:
-            self.connection._mexe("metrics", method="POST", query_props=c)
+            self.connection._mexe("measurements", method="POST", query_props=c)
         self.chunks = []
 
         for chunk in self.tagged_chunks:
@@ -131,7 +133,10 @@ class Queue(object):
 
     def _add_measurement(self, type, nm):
         if not self.chunks or self._num_measurements_in_current_chunk() == self.MAX_MEASUREMENTS_PER_CHUNK:
-            self.chunks.append({'gauges': [], 'counters': []})
+            self.chunks.append({'measurements': []})
+        # Dirty hack, the key `gauges` in the old API now becomes `measurements`
+        if type == 'gauge':
+            type = 'measurement'
         self.chunks[-1][type + 's'].append(nm)
 
     def _add_tagged_measurement(self, nm):
@@ -155,7 +160,7 @@ class Queue(object):
         else:
             if self.chunks:
                 cc = self.chunks[-1]
-                return len(cc['gauges']) + len(cc['counters'])
+                return len(cc['measurements'])
             else:
                 return 0
 

@@ -27,7 +27,7 @@ fake_metric = {
 
 class TestAppOptics(unittest.TestCase):
     def setUp(self):
-        self.conn = appoptics_metrics.connect('key_test')
+        self.conn = appoptics_metrics.connect('key_test', tags={"region": "us-east-1"})
         server.clean()
 
     def test_list_metrics_when_there_are_no_metrics(self):
@@ -78,34 +78,6 @@ class TestAppOptics(unittest.TestCase):
         assert metrics[1].name == 'gauge_2'
         assert metrics[1].description == 'desc 2'
 
-    def test_list_metrics_adding_counter_metrics(self):
-        self.conn.submit('c1', 10, 'counter', description='counter desc 1')
-        self.conn.submit('c2', 20, 'counter', description='counter desc 2')
-        # Get all metrics
-        metrics = self.conn.list_metrics()
-
-        assert len(metrics) == 2
-
-        assert isinstance(metrics[0], appoptics_metrics.metrics.Counter)
-        assert metrics[0].name == 'c1'
-        assert metrics[0].description == 'counter desc 1'
-
-        assert isinstance(metrics[1], appoptics_metrics.metrics.Counter)
-        assert metrics[1].name == 'c2'
-        assert metrics[1].description == 'counter desc 2'
-
-    def test_list_metrics_adding_one_counter_one_gauge(self):
-        self.conn.submit('gauge1', 10)
-        self.conn.submit('counter2', 20, type='counter', description="desc c2")
-        # Get all metrics
-        metrics = self.conn.list_metrics()
-        assert isinstance(metrics[0], appoptics_metrics.metrics.Gauge)
-        assert metrics[0].name == 'gauge1'
-
-        assert isinstance(metrics[1], appoptics_metrics.metrics.Counter)
-        assert metrics[1].name == 'counter2'
-        assert metrics[1].description == 'desc c2'
-
     def test_deleting_a_gauge(self):
         self.conn.submit('test', 100)
         assert len(self.conn.list_metrics()) == 1
@@ -119,83 +91,34 @@ class TestAppOptics(unittest.TestCase):
         self.conn.delete(['test', 'test2'])
         assert len(self.conn.list_metrics()) == 0
 
-    def test_deleting_a_counter(self):
-        self.conn.submit('test', 200, type='counter')
-        assert len(self.conn.list_metrics()) == 1
-        self.conn.delete('test')
-        assert len(self.conn.list_metrics()) == 0
-
     def test_get_gauge_basic(self):
-        name, desc = '1', 'desc 1'
-        self.conn.submit(name, 10, description=desc)
-        gauge = self.conn.get(name)
+        # Create a simple metric through submitting a measurement
+        name = '1'
+        self.conn.submit(name, 10)
+        gauge = self.conn.get_metric(name)
         assert isinstance(gauge, appoptics_metrics.metrics.Gauge)
         assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements['unassigned']) == 1
-        assert gauge.measurements['unassigned'][0]['value'] == 10
-
-    def test_get_counter_basic(self):
-        name, desc = 'counter1', 'count desc 1'
-        self.conn.submit(name, 20, type='counter', description=desc)
-        counter = self.conn.get(name)
-        assert isinstance(counter, appoptics_metrics.metrics.Counter)
-        assert counter.name == name
-        assert counter.description == desc
-        assert len(counter.measurements['unassigned']) == 1
-        assert counter.measurements['unassigned'][0]['value'] == 20
-
-    def test_send_single_measurements_for_gauge_with_source(self):
-        name, desc, src = 'Test', 'A Test Gauge.', 'from_source'
-        self.conn.submit(name, 10, description=desc, source=src)
-        gauge = self.conn.get(name)
-        assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements[src]) == 1
-        assert gauge.measurements[src][0]['value'] == 10
-
-    def test_send_single_measurements_for_counter_with_source(self):
-        name, desc, src = 'Test', 'A Test Counter.', 'from_source'
-        self.conn.submit(name, 111, type='counter', description=desc, source=src)
-        counter = self.conn.get(name)
-        assert counter.name == name
-        assert counter.description == desc
-        assert len(counter.measurements[src]) == 1
-        assert counter.measurements[src][0]['value'] == 111
-
-    def test_add_in_counter(self):
-        name, desc, src = 'Test', 'A Test Counter.', 'from_source'
-        self.conn.submit(name, 111, type='counter', description=desc, source=src)
-        counter = self.conn.get(name)
-        assert counter.name == name
-        assert counter.description == desc
-        assert len(counter.measurements[src]) == 1
-        assert counter.measurements[src][0]['value'] == 111
-
-        counter.add(1, source=src)
-
-        counter = self.conn.get(name)
-        assert counter.name == name
-        assert counter.description == desc
-        assert len(counter.measurements[src]) == 2
-        assert counter.measurements[src][-1]['value'] == 1
 
     def test_add_in_gauge(self):
-        name, desc, src = 'Test', 'A Test Gauge.', 'from_source'
-        self.conn.submit(name, 10, description=desc, source=src)
-        gauge = self.conn.get(name)
-        assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements[src]) == 1
-        assert gauge.measurements[src][0]['value'] == 10
+        name, desc, tags = 'Test', 'A Test Gauge.', {"region": "us-east-1"}
+        self.conn.submit(name, 10, tags=tags)
+        gauge = self.conn.get_measurements(name, duration=86400, tags=tags)
+        assert gauge['name'] == name
+        assert gauge['series'][0]['measurements'][0]['value'] == 10
 
-        gauge.add(1, source=src)
+        self.conn.submit(name, 1)
+        gauge = self.conn.get_measurements(name, duration=86400, tags=tags)
 
-        gauge = self.conn.get(name)
-        assert gauge.name == name
-        assert gauge.description == desc
-        assert len(gauge.measurements[src]) == 2
-        assert gauge.measurements[src][-1]['value'] == 1
+        assert gauge.get('name') == name
+        assert len(gauge['series'][0]['measurements']) == 2
+        assert gauge['series'][0]['measurements'][-1]['value'] == 1
+
+        self.conn.submit(name, 5)
+        gauge = self.conn.get_measurements(name, duration=86400, tags=tags)
+
+        assert gauge.get('name') == name
+        assert len(gauge['series'][0]['measurements']) == 3
+        assert gauge['series'][0]['measurements'][-1]['value'] == 5
 
     def test_md_inherit_tags(self):
         self.conn.set_tags({'company': 'AppOptics', 'hi': 'four'})

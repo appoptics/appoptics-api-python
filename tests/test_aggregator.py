@@ -60,7 +60,7 @@ class TestAggregator(unittest.TestCase):
 
     def test_initialize_measure_time(self):
         assert Aggregator(self.conn).measure_time is None
-        assert Aggregator(self.conn, measure_time=12345).measure_time == 12345
+        assert Aggregator(self.conn, time=12345).measure_time == 12345
 
     def test_add_single_measurement(self):
         m = 'metric.one'
@@ -109,20 +109,19 @@ class TestAggregator(unittest.TestCase):
         self.agg.add('test.metric', 42)
         self.agg.add('test.metric', 43)
         assert self.agg.to_payload() == {
-            'gauges': [
+            'measurements': [
                 {'name': 'test.metric', 'count': 2, 'sum': 85, 'min': 42, 'max': 43}
             ],
             'source': 'mysource'
         }
-        assert 'gauges' in self.agg.to_payload()
-        assert 'counters' not in self.agg.to_payload()
+        assert 'measurements' in self.agg.to_payload()
 
     def test_to_payload_no_source(self):
         self.agg.source = None
         self.agg.add('test.metric', 42)
 
         assert self.agg.to_payload() == {
-            'gauges': [
+            'measurements': [
                 {
                     'name': 'test.metric',
                     'count': 1,
@@ -156,7 +155,6 @@ class TestAggregator(unittest.TestCase):
 
     def test_submit(self):
         self.agg.add('test.metric', 42)
-        self.agg.add('test.metric', 10)
         resp = self.agg.submit()
         # Doesn't return a body
         assert resp is None
@@ -182,14 +180,14 @@ class TestAggregator(unittest.TestCase):
         self.agg.measure_time = mt
         self.agg.period = None
         self.agg.add("foo", 42)
-        assert 'measure_time' in self.agg.to_payload()
-        assert self.agg.to_payload()['measure_time'] == mt
+        assert 'time' in self.agg.to_payload()
+        assert self.agg.to_payload()['time'] == mt
 
     def test_measure_time_not_in_payload(self):
         self.agg.measure_time = None
         self.agg.period = None
         self.agg.add("foo", 42)
-        assert 'measure_time' not in self.agg.to_payload()
+        assert 'time' not in self.agg.to_payload()
 
     def test_floor_measure_time(self):
         # 2014-12-17 17:46:58 UTC
@@ -224,20 +222,7 @@ class TestAggregator(unittest.TestCase):
         # This will occur only if period is set
         self.agg.measure_time = 1418838418
         self.agg.period = 60
-        assert self.agg.to_payload()['measure_time'] == 1418838360
-
-    def test_submit_side_by_side(self):
-        # Tagged and untagged measurements should be handled as separate
-        self.agg.add_tags({'hostname': 'web-1'})
-        self.agg.add('test.metric', 42)
-        self.agg.add_tagged('test.metric', 10)
-        self.agg.submit()
-
-        gauge = self.conn.get('test.metric', duration=60)
-        assert len(gauge.measurements['unassigned']) == 1
-
-        resp = self.conn.get_tagged('test.metric', duration=60, tags_search="hostname=web-1")
-        assert len(resp['series']) == 1
+        assert self.agg.to_payload()['time'] == 1418838360
 
 
 if __name__ == '__main__':

@@ -2,7 +2,11 @@ class Alert(object):
     """AppOptics Alert Base class"""
 
     def __init__(self, connection, name, _id=None, description=None, version=2, md=False,
-                 conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
+                 conditions=None, services=None, attributes=None, active=True, rearm_seconds=None):
+        conditions = conditions or []
+        services = services or []
+        attributes = attributes or {}
+
         self.connection = connection
         self.name = name
         self.description = description

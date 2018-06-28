@@ -139,37 +139,28 @@ class TestAppOpticsQueue(unittest.TestCase):
 
     def test_single_measurement_gauge(self):
         q = self.q
-        q.add('temperature', 22.1)
-        assert len(q.chunks) == 1
-        assert q._num_measurements_in_current_chunk() == 1
+        q.add('temperature', 22.1, tags={'sky': 'blue'})
+        assert len(q.tagged_chunks) == 1
+        assert q._num_measurements_in_current_chunk(tagged=True) == 1
 
     def test_default_type_measurement(self):
         q = self.q
-        q.add('temperature', 22.1)
-        assert len(q._current_chunk()['gauges']) == 1
-        assert len(q._current_chunk()['counters']) == 0
-
-    def test_single_measurement_counter(self):
-        q = self.q
-        q.add('num_requests', 2000, type='counter')
-        assert len(q.chunks) == 1
-        assert q._num_measurements_in_current_chunk() == 1
-        assert len(q._current_chunk()['gauges']) == 0
-        assert len(q._current_chunk()['counters']) == 1
+        q.add('temperature', 22.1, tags={'sky': 'blue'})
+        assert len(q._current_chunk(tagged=True)['measurements']) == 1
 
     def test_num_metrics_in_queue(self):
         q = self.q
         # With only one chunk
         for _ in range(q.MAX_MEASUREMENTS_PER_CHUNK - 10):
-            q.add('temperature', randint(20, 30))
+            q.add('temperature', randint(20, 30), tags={'sky': 'blue'})
         assert q._num_measurements_in_queue() == 290
         # Now ensure multiple chunks
         for _ in range(100):
-            q.add('num_requests', randint(100, 300), type='counter')
+            q.add('num_requests', randint(100, 300), type='gauge', tags={'sky': 'blue'})
         assert q._num_measurements_in_queue() == 390
 
     def test_auto_submit_on_metric_count(self):
-        q = self.conn.new_queue(auto_submit_count=10)
+        q = self.conn.new_queue(auto_submit_count=10, tags={'sky': 'blue'})
         for _ in range(9):
             q.add('temperature', randint(20, 30))
         assert q._num_measurements_in_queue() == 9
@@ -183,18 +174,18 @@ class TestAppOpticsQueue(unittest.TestCase):
     def test_reach_chunk_limit(self):
         q = self.q
         for i in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('temperature', randint(20, 30))
-        assert len(q.chunks) == 1
-        assert q._num_measurements_in_current_chunk() == q.MAX_MEASUREMENTS_PER_CHUNK
+            q.add('temperature', randint(20, 30), tags={'sky': 'blue'})
+        assert len(q.tagged_chunks) == 1
+        assert q._num_measurements_in_current_chunk(tagged=True) == q.MAX_MEASUREMENTS_PER_CHUNK
 
-        q.add('temperature', 40)  # damn is pretty hot :)
-        assert q._num_measurements_in_current_chunk() == 1
-        assert len(q.chunks) == 2
+        q.add('temperature', 40, tags={'sky': 'blue'})  # damn is pretty hot :)
+        assert q._num_measurements_in_current_chunk(tagged=True) == 1
+        assert len(q.tagged_chunks) == 2
 
     def test_submit_context_manager(self):
         try:
             with self.conn.new_queue() as q:
-                q.add('temperature', 32)
+                q.add('temperature', 32, tags={'sky': 'blue'})
                 raise ValueError
         except ValueError:
             gauge = self.conn.get('temperature', resolution=1, count=2)
@@ -204,7 +195,7 @@ class TestAppOpticsQueue(unittest.TestCase):
 
     def test_submit_one_measurement_batch_mode(self):
         q = self.q
-        q.add('temperature', 22.1)
+        q.add('temperature', 22.1, tags={'sky': 'blue'})
         q.submit()
         metrics = self.conn.list_metrics()
         assert len(metrics) == 1
@@ -214,7 +205,7 @@ class TestAppOpticsQueue(unittest.TestCase):
         assert len(gauge.measurements['unassigned']) == 1
 
         # Add another measurements for temperature
-        q.add('temperature', 23)
+        q.add('temperature', 23, tags={'sky': 'blue'})
         q.submit()
         metrics = self.conn.list_metrics()
         assert len(metrics) == 1
@@ -231,7 +222,7 @@ class TestAppOpticsQueue(unittest.TestCase):
         assert len(metrics) == 0
 
         for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('temperature', t)
+            q.add('temperature', t, tags={'sky': 'blue'})
         q.submit()
         metrics = self.conn.list_metrics()
         assert len(metrics) == 1
@@ -242,7 +233,7 @@ class TestAppOpticsQueue(unittest.TestCase):
             assert gauge.measurements['unassigned'][t - 1]['value'] == t
 
         for cl in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('cpu_load', cl)
+            q.add('cpu_load', cl, tags={'sky': 'blue'})
         q.submit()
         metrics = self.conn.list_metrics()
         assert len(metrics) == 2
@@ -260,7 +251,7 @@ class TestAppOpticsQueue(unittest.TestCase):
         a.add('bar', 37)
         q.add_aggregator(a)
 
-        gauges = q.chunks[0]['gauges']
+        gauges = q.chunks[0]['measurements']
         names = [g['name'] for g in gauges]
 
         assert len(q.chunks) == 1
@@ -273,11 +264,11 @@ class TestAppOpticsQueue(unittest.TestCase):
         assert gauges[1]['source'] == 'mysource'
 
         # All gauges should have the same measure_time
-        assert 'measure_time' in gauges[0]
-        assert 'measure_time' in gauges[1]
+        assert 'time' in gauges[0]
+        assert 'time' in gauges[1]
 
         # Test that time was snapped to 10s
-        assert gauges[0]['measure_time'] % 10 == 0
+        assert gauges[0]['time'] % 10 == 0
 
     def test_md_submit(self):
         q = self.q
@@ -357,14 +348,15 @@ class TestAppOpticsQueue(unittest.TestCase):
         assert measurements[1]['value'] == 20
 
     def test_md_auto_submit_on_metric_count(self):
-        q = self.conn.new_queue(auto_submit_count=2)
+        q = self.conn.new_queue(auto_submit_count=2, tags={"region": "us-east-1"})
 
+        # Use the queue's default tag as at least one tag is needed.
         q.add('untagged_cpu', 10)
         q.add_tagged('tagged_cpu', 20, tags={'hostname': 'web-2'})
 
         assert q._num_measurements_in_queue() == 0
 
-        gauge = self.conn.get('untagged_cpu', duration=60)
+        gauge = self.conn.get_metric('untagged_cpu', duration=60)
         assert len(gauge.measurements['unassigned']) == 1
 
         resp = self.conn.get_tagged('tagged_cpu', duration=60, tags_search="hostname=web-2")

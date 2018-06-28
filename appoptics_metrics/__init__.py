@@ -13,7 +13,7 @@ import json
 import email.message
 from appoptics_metrics import exceptions
 from appoptics_metrics.queue import Queue
-from appoptics_metrics.metrics import Gauge, Counter, Metric
+from appoptics_metrics.metrics import Gauge, Metric
 from appoptics_metrics.alerts import Alert, Service
 from appoptics_metrics.annotations import Annotation
 from appoptics_metrics.spaces import Space, Chart
@@ -54,22 +54,23 @@ def sanitize_no_op(metric_name):
 class AppOpticsConnection(object):
     """AppOptics API Connection.
     Usage:
-    >>> conn = AppOpticsConnection(api_key)
-    >>> conn.list_metrics()
+    conn = AppOpticsConnection(api_key)
+    conn.list_metrics()
     [...]
     """
 
     def __init__(self, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
-                 protocol="https", tags={}):
+                 protocol="https", tags=None):
         """Create a new connection to AppOptics Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
         :param api_key: The API Key (token) to use to authenticate
         :type api_key: str
         """
+        tags = tags or {}
         try:
             self.api_key = api_key.encode('ascii')
-        except:
+        except Exception:
             raise TypeError("AppOptics only supports ascii for the credentials")
 
         if protocol not in ["http", "https"]:
@@ -103,9 +104,9 @@ class AppOpticsConnection(object):
     def __getattr__(self, attr):
         def handle_undefined_method(*args):
             if re.search('dashboard|instrument', attr):
-                print("We have deprecated support for instruments and dashboards.")
-                print("https://github.com/appoptics/appoptics-api-python")
-                print("")
+                six.print_("We have deprecated support for instruments and dashboards.")
+                six.print_("https://github.com/appoptics/appoptics-api-python")
+                six.print_("")
             raise NotImplementedError()
         return handle_undefined_method
 
@@ -117,7 +118,8 @@ class AppOpticsConnection(object):
         headers['User-Agent'] = self._compute_ua()
         return headers
 
-    def _url_encode_params(self, params={}):
+    def _url_encode_params(self, params=None):
+        params = params or {}
         if not isinstance(params, dict):
             raise Exception("You must pass in a dictionary!")
         params_list = []
@@ -138,9 +140,12 @@ class AppOpticsConnection(object):
                 headers['Content-Type'] = "application/json"
             else:
                 uri += "?" + self._url_encode_params(query_props)
-
         log.info("method=%s uri=%s" % (method, uri))
-        log.info("body(->): %s" % body)
+        if body is None:
+            log.info("body(->): %s" % body)
+        else:
+            log.info("body(->): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
+
         conn.request(method, uri, body=body, headers=headers)
 
         return conn.getresponse()
@@ -149,6 +154,8 @@ class AppOpticsConnection(object):
         """ Process the response from the server """
         success = True
         resp_data = None
+        log.info("status code(<-): %s" % resp.status)
+
         not_a_server_error = resp.status < 500
 
         if not_a_server_error:
@@ -206,20 +213,37 @@ class AppOpticsConnection(object):
         else:
             return resp
 
-    # Get a shallow copy of the top-level tag set
     def get_tags(self):
+        """
+        Get a shallow copy of the top-level tag set
+        :return:
+        """
         return dict(self.tags)
 
-    # Define the top-level tag set for posting measurements
     def set_tags(self, d):
+        """
+        Define the top-level tag set for posting measurements
+        :param d:
+        :return:
+        """
         self.tags = dict(d)    # Create a copy
 
-    # Add to the top-level tag set
     def add_tags(self, d):
+        """
+        Add to the top-level tag set
+        :param d:
+        :return:
+        """
         self.tags.update(d)
 
-    # Return all items for a "list" request
     def _get_paginated_results(self, entity, klass, **query_props):
+        """
+        Return all items for a "list" request
+        :param entity:
+        :param klass:
+        :param query_props:
+        :return:
+        """
         resp = self._mexe(entity, query_props=query_props)
 
         results = self._parse(resp, entity, klass)
@@ -245,16 +269,24 @@ class AppOpticsConnection(object):
     def list_all_metrics(self, **query_props):
         return self._get_paginated_results("metrics", Metric, **query_props)
 
-    def submit(self, name, value, type="gauge", **query_props):
+    def submit_measurement(self, name, value, **query_props):
+        """
+        submit_measurement is an alias for submit()
+        :param name:
+        :param value:
+        :param query_props:
+        :return:
+        """
+        return self.submit(name, value, **query_props)
+
+    def submit(self, name, value, **query_props):
+        # silently ignore `type` for measurements submission
+        query_props.pop("type", None)
+
         if 'tags' in query_props or self.get_tags():
             self.submit_tagged(name, value, **query_props)
-        else:
-            payload = {'gauges': [], 'counters': []}
-            metric = {'name': self.sanitize(name), 'value': value}
-            for k, v in query_props.items():
-                metric[k] = v
-            payload[type + 's'].append(metric)
-            self._mexe("metrics", method="POST", query_props=payload)
+        else:  # at least one `tags` is required
+            raise Exception('At least one tag is needed.')
 
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
@@ -279,17 +311,44 @@ class AppOpticsConnection(object):
             measurement[k] = v
         return measurement
 
+    def get_metric(self, name, **query_props):
+        """
+        get_metric is the API to fetch a metric.
+        :param name:
+        :param query_props:
+        :return:
+        """
+        return self.get(name, **query_props)
+
     def get(self, name, **query_props):
+        """
+        get is used to retrieve metrics from the server.
+        :param name:
+        :param query_props:
+        :return:
+        """
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Counter.from_dict(self, resp)
         else:
-            raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+            raise Exception('The server sent me something that is not a Gauge.')
+
+    def get_measurements(self, name, **query_props):
+        """
+        get_measurements retrieves measurements from a specific metric
+        :param name:
+        :param query_props:
+        :return:
+        """
+        return self.get_tagged(name, **query_props)
 
     def get_tagged(self, name, **query_props):
-        """Fetches multi-dimensional metrics"""
+        """
+        get_tagged is used to retrieve measurements from a specific metric.
+        :param name:
+        :param query_props:
+        :return:
+        """
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
@@ -303,9 +362,6 @@ class AppOpticsConnection(object):
             query_props.update(parsed_tags)
 
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
-
-    def get_measurements(self, name, **query_props):
-        return self.get_tagged(name, **query_props)
 
     def get_composite(self, compose, **query_props):
         if self.get_tags():
@@ -333,8 +389,40 @@ class AppOpticsConnection(object):
         query_props['type'] = 'composite'
         return self.update(name, **query_props)
 
+    def create_metric(self, name, type="gauge", **props):
+        """
+        create_metric creates a new metric with the provided name and properties
+        :param name:
+        :param type:
+        :param props:
+        :return:
+        """
+        return self.create(name, type, **props)
+
+    def create(self, name, type="gauge", **props):
+        props.update({'name': name})
+        props.update({'type': type})
+        return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=props)
+
+    def update_metric(self, name, **query_props):
+        """
+        update_metric updates the properties of a metric
+        :param name:
+        :param query_props:
+        :return:
+        """
+        return self.update(name, **query_props)
+
     def update(self, name, **query_props):
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
+
+    def delete_metric(self, names):
+        """
+        delete_metric deletes one or multiple metrics
+        :param names:
+        :return:
+        """
+        return self.delete(names)
 
     def delete(self, names):
         if isinstance(names, six.string_types):
@@ -504,9 +592,14 @@ class AppOpticsConnection(object):
         resp['space_id'] = space_id
         return Chart.from_dict(self, resp)
 
-    # Find a chart by name in a space. Return the first match, so if multiple
-    # charts have the same name, you'll only get the first one
     def find_chart(self, name, space):
+        """
+        Find a chart by name in a space. Return the first match, so if multiple
+        charts have the same name, you'll only get the first one
+        :param name:
+        :param space:
+        :return:
+        """
         charts = self.list_charts_in_space(space)
         for chart in charts:
             if chart.name and chart.name.lower() == name.lower():
@@ -552,7 +645,7 @@ class AppOpticsConnection(object):
 
 
 def connect(api_key=None, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
-            protocol="https", tags={}):
+            protocol="https", tags=None):
     """
     Connect to AppOptics Metrics
     """
@@ -566,7 +659,11 @@ def _decode_body(resp):
     Read and decode HTTPResponse body based on charset and content-type
     """
     body = resp.read()
+    # if body is None:
     log.info("body(<-): %s" % body)
+    # else:
+    #     log.info("body(<-): %s" % json.dumps(json.loads(body), indent=4, sort_keys=True))
+
     if not body:
         return None
 

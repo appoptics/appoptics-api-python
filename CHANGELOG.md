@@ -1,5 +1,18 @@
 ## Changelog
 
+### Version 5.0.0
+* This is the first version that supports AppOptics metrics APIs. 
+* Some new methods are provided as aliases of the original ones.   
+* Legacy Librato source-based metrics/measurements are deprecated and no longer supported in this version.
+
+    _a) Source-based measurements are deprecated in AppOptics._
+    
+    _b) At least one `tags` is needed for submitting measurements._
+    
+    _c) `counters` is deprecated._
+
+Please refer to the README for a simple tutorial and AppOptics API documents for more details.
+
 ### Version 4.0.0
 * Removed username (email) from API connection credential
 * Updated License
