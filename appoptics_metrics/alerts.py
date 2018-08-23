@@ -60,7 +60,7 @@ class Alert(object):
                   description=data['description'],
                   conditions=data['conditions'],
                   services=data['services'],
-                  _id=data['id'],
+                  _id=data.get('id'),
                   active=data['active'],
                   rearm_seconds=data['rearm_seconds'],
                   attributes=data['attributes'],
