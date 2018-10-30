@@ -55,19 +55,19 @@ class Alert(object):
         """Returns an alert object from a dictionary item,
         which is usually from AppOptics's API"""
         obj = cls(connection,
-                  data['name'],
-                  version=data['version'],
-                  description=data['description'],
-                  conditions=data['conditions'],
-                  services=data['services'],
+                  data.get('name'),
+                  version=data.get('version'),
+                  description=data.get('description'),
+                  conditions=data.get('conditions'),
+                  services=data.get('services'),
                   _id=data.get('id'),
-                  active=data['active'],
-                  rearm_seconds=data['rearm_seconds'],
-                  attributes=data['attributes'],
-                  md=data['md'],
-                  created_at=data['created_at'],
-                  updated_at=data['updated_at'],
-                  rearm_per_signal=data['rearm_per_signal']
+                  active=data.get('active'),
+                  rearm_seconds=data.get('rearm_seconds'),
+                  attributes=data.get('attributes'),
+                  md=data.get('md'),
+                  created_at=data.get('created_at'),
+                  updated_at=data.get('updated_at'),
+                  rearm_per_signal=data.get('rearm_per_signal')
                   )
         return obj
 
