@@ -485,7 +485,7 @@ class AppOpticsConnection(object):
         """Update an existing alert"""
         payload = alert.get_payload()
         for k, v in query_props.items():
-            if not v == None:
+            if v is not None:
                 payload[k] = v
         resp = self._mexe("alerts/%s" % alert._id,
                           method="PUT", query_props=payload)
