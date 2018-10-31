@@ -2,7 +2,8 @@ class Alert(object):
     """AppOptics Alert Base class"""
 
     def __init__(self, connection, name, _id=None, description=None, version=2, md=False,
-                 conditions=None, services=None, attributes=None, active=True, rearm_seconds=None):
+                 conditions=None, services=None, attributes=None, active=True, rearm_seconds=None,
+                 created_at=None, updated_at=None, rearm_per_signal=None):
         conditions = conditions or []
         services = services or []
         attributes = attributes or {}
@@ -34,6 +35,9 @@ class Alert(object):
         self.rearm_seconds = rearm_seconds
         self._id = _id
         self.md = md
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.rearm_per_signal = rearm_per_signal
 
     def add_condition_for(self, metric_name, source='*'):
         condition = Condition(metric_name, source)
@@ -51,28 +55,37 @@ class Alert(object):
         """Returns an alert object from a dictionary item,
         which is usually from AppOptics's API"""
         obj = cls(connection,
-                  data['name'],
-                  version=data['version'],
-                  description=data['description'],
-                  conditions=data['conditions'],
-                  services=data['services'],
-                  _id=data['id'],
-                  active=data['active'],
-                  rearm_seconds=data['rearm_seconds'],
-                  attributes=data['attributes'],
-                  md=data['md'])
+                  data.get('name'),
+                  version=data.get('version'),
+                  description=data.get('description'),
+                  conditions=data.get('conditions'),
+                  services=data.get('services'),
+                  _id=data.get('id'),
+                  active=data.get('active'),
+                  rearm_seconds=data.get('rearm_seconds'),
+                  attributes=data.get('attributes'),
+                  md=data.get('md'),
+                  created_at=data.get('created_at'),
+                  updated_at=data.get('updated_at'),
+                  rearm_per_signal=data.get('rearm_per_signal')
+                  )
         return obj
 
     def get_payload(self):
         return {'name': self.name,
                 'md': self.md,
+                'id': self._id,
                 'attributes': self.attributes,
                 'version': self.version,
                 'description': self.description,
                 'rearm_seconds': self.rearm_seconds,
                 'active': self.active,
                 'services': [x._id for x in self.services],
-                'conditions': [x.get_payload() for x in self.conditions]}
+                'conditions': [x.get_payload() for x in self.conditions],
+                'created_at': self.created_at,
+                'updated_at': self.updated_at,
+                'rearm_per_signal': self.rearm_per_signal,
+                }
 
     def save(self):
         self.connection.update_alert(self)

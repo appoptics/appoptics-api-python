@@ -18,7 +18,7 @@ from appoptics_metrics.alerts import Alert, Service
 from appoptics_metrics.annotations import Annotation
 from appoptics_metrics.spaces import Space, Chart
 
-__version__ = "5.0.0"
+__version__ = "5.1.0"
 
 # Defaults
 HOSTNAME = "api.appoptics.com"
@@ -485,7 +485,8 @@ class AppOpticsConnection(object):
         """Update an existing alert"""
         payload = alert.get_payload()
         for k, v in query_props.items():
-            payload[k] = v
+            if v is not None:
+                payload[k] = v
         resp = self._mexe("alerts/%s" % alert._id,
                           method="PUT", query_props=payload)
         return resp
