@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 5.1.0
+* Added missing keys for alerts.
+
 ### Version 5.0.0
 * This is the first version that supports AppOptics metrics APIs. 
 * Some new methods are provided as aliases of the original ones.   
