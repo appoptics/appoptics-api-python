@@ -1,6 +1,9 @@
 appoptics-api-python
 ====================
 
+> [!CAUTION]
+> AppOptics has reached end of service life. This codebase is no longer maintained, please migrate to [SolarWinds Observability](https://www.solarwinds.com/solarwinds-observability) and [SolarWinds APM Python](https://github.com/solarwinds/apm-python).
+
 A Python wrapper for the AppOptics Metrics API.
 
 ## Documentation Notes
